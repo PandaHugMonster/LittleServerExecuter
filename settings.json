@@ -24,7 +24,7 @@
 		"postgres": {
 			"1": {
 				"name": "postgresql",
-				"pid": "/opt/pndcc/pids/postgres.pid"
+				"pid": "/var/lib/postgres/data/postmaster.pid"
 			}
 		},
 		"mysqld": {

@@ -231,7 +231,7 @@ class LSEApplication(Gtk.Application):
 			
 		if os.path.isfile(self.settings['services']['postgres']['1']['pid']):
 			f = open(self.settings['services']['postgres']['1']['pid'])
-			pid4 = int(f.read())
+			pid4 = int(f.readline())
 			f.close()
 		else:
 			pid4 = -1
