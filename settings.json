@@ -1,37 +1,10 @@
 {
 	"app": {
-		"pidfile": "/tmp/pndcc.pid",
-		"rootapp": "pkexec",
-		"systemcontrol": "systemctl"
+		"pidfile": "/tmp/pndcc.pid"
 	},
 	"services": {
-		"nginx": {
-			"1": {
-				"name": "nginx",
-				"pid": "/run/nginx.pid"
-			},
-			"2": {
-				"name": "php-fpm",
-				"pid": "/opt/pndcc/pids/php-fpm.pid"
-			}
-		},
-		"httpd": {
-			"1": {
-				"name": "httpd",
-				"pid": "/run/httpd/httpd.pid"
-			}
-		},
-		"postgres": {
-			"1": {
-				"name": "postgresql",
-				"pid": "/var/lib/postgres/data/postmaster.pid"
-			}
-		},
-		"mysqld": {
-			"1": {
-				"name": "mysqld",
-				"pid": "/run/mysqld/mysqld.pid"
-			}
-		}
+		"httpd.service": "Apache server",
+		"postgresql.service": "Postgres server",
+		"mysqld.service": "MySQL server"
 	}
 }
