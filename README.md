@@ -17,3 +17,17 @@ LSE is the simplest python app that help instantly run systemd services (apache,
 as root (or you have to have permissions to use systemd as a regular user)
 2. Little Server Executer is going to be the part 
 of a new system called Panda's Control Centre
+
+#### Settings Example
+```json
+{
+	"app": {
+		"pidfile": "/tmp/pndcc.pid"
+	},
+	"services": {
+		"httpd.service": "Apache server",
+		"postgresql.service": "Postgres server",
+		"mysqld.service": "MySQL server"
+	}
+}
+````
