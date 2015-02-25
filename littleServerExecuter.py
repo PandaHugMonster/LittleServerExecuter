@@ -12,6 +12,7 @@ from threading import Thread
 from gi.repository import Gtk, Gio
 from random import randint
 from dbus.mainloop.glib import DBusGMainLoop
+from gi.repository import Notify
 DBusGMainLoop(set_as_default=True)
 
 from dbus import SystemBus, SessionBus, Interface
@@ -44,11 +45,14 @@ class LittleServerExecuterApp(Gtk.Application):
 	
 	""" Main Grid """
 	grid = None
+	
+	name = 'Little Server Executer'
 
 	""" Constructor """
 	def __init__(self):
 		self.pid = str(os.getpid())
 		Gtk.Application.__init__(self)
+		Notify.init(self.pid)
 	
 	""" Gtk.Application Startup """
 	def do_startup(self):
@@ -68,6 +72,11 @@ class LittleServerExecuterApp(Gtk.Application):
 		self.add_action(quitAction)
 		
 		self.manager.Subscribe()
+		bus.add_signal_receiver(self.systemdJobRemoved,
+                        'JobRemoved',
+                        'org.freedesktop.systemd1.Manager',
+                        'org.freedesktop.systemd1',
+                        '/org/freedesktop/systemd1')
 	
 	"""	Activation """
 	def do_activate(self):
@@ -80,17 +89,33 @@ class LittleServerExecuterApp(Gtk.Application):
 		self.builder.connect_signals(handlers)
 			
 		self.setSettings()
-	
-		
-		
+
 		self.add_window(self.window)
 		self.window.show_all()
 
-	def startService(self, service):
-		self.manager.StartUnit(service, 'replace')
+	def nonAuthorized(self):
+		notification = Notify.Notification.new(self.name, "You are not authorized to do this", "dialog-error")
+		notification.show()
+
+	def startService(self, service, data):
+		try:
+			self.manager.StartUnit(service, 'replace')
+			allGood = True
+		except:
+			self.nonAuthorized()
+			allGood = False
+			
+		return allGood
 		
-	def stopService(self, service):
-		self.manager.StopUnit(service, 'replace')
+	def stopService(self, service, data):
+		try:
+			self.manager.StopUnit(service, 'replace')
+			allGood = True
+		except:
+			self.nonAuthorized()
+			allGood = False
+			
+		return allGood
 		
 
 	""" Get settings """
@@ -120,6 +145,7 @@ class LittleServerExecuterApp(Gtk.Application):
 		prev = None
 		for (service, data) in self.services.items():
 			switch = data['switch']
+			switch.set_active(data['state'] == 'active')
 			switch.connect("notify::active", self.on_switch_activated)
 			label = Gtk.Label(data['title'])
 			
@@ -131,10 +157,31 @@ class LittleServerExecuterApp(Gtk.Application):
 			prev = switch
 
 	def on_switch_activated(self, switch, data):
+		self.workWithService(switch)
+		
+		
+	def workWithService(self, switch):
 		for (service, data) in self.services.items():
 			if data['switch'] is switch:
-				print(service)
+				prevState = switch.get_active()
+				if prevState:
+					self.startService(service, data)
+				else:
+					self.stopService(service, data)
 		
+	def systemdJobRemoved(self, arg1, path, service, status):
+		for (servicein, data) in self.services.items():
+			if servicein == service:
+				if (status == 'done'):
+					res = data['interface'].Get('org.freedesktop.systemd1.Unit',
+							'ActiveState',
+							dbus_interface='org.freedesktop.DBus.Properties')
+					if (res == 'active'):
+						print("Service %s is started" % service)
+						data['switch'].set_state(True)
+					else:
+						print("Service %s is stopd" % service)
+						data['switch'].set_state(False)
 
 	""" Run App About """
 	def appAbout(self, action, parameter):
