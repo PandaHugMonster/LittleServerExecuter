@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.18.3 -->
+<!-- Generated with glade 3.19.0 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkWindow" id="TheWindow">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Little Server Executer</property>
-    <property name="default_width">400</property>
-    <property name="default_height">300</property>
+    <property name="default_width">500</property>
+    <property name="default_height">400</property>
     <property name="hide_titlebar_when_maximized">True</property>
     <property name="icon">drawing_LSE_logo.png</property>
     <property name="urgency_hint">True</property>
@@ -28,6 +28,27 @@
             <child>
               <placeholder/>
             </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -42,11 +63,12 @@
     <property name="can_focus">False</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
+    <property name="destroy_with_parent">True</property>
     <property name="icon">drawing_LSE_logo.png</property>
     <property name="type_hint">normal</property>
+    <property name="skip_taskbar_hint">True</property>
     <property name="attached_to">TheWindow</property>
     <property name="program_name">Little Server Executer</property>
-    <property name="version">0.4.0</property>
     <property name="copyright" translatable="yes">Panda Hug Monster &lt;ivan.guineapig@gmail.com&gt;</property>
     <property name="comments" translatable="yes">The simplest Python + Gtk application to control Systemd services such as httpd, mariadb and so on. A part of the "Panda's Control Centre"</property>
     <property name="website">https://github.com/PandaHugMonster/LittleServerExecuter</property>
