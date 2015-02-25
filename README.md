@@ -1,48 +1,19 @@
 # LittleServerExecuter
-LSE is the simplest python app that help instantly run systemd services (apache, mysql, postgresql, nginx + php-fpm)
+LSE is the simplest python app that help instantly run systemd services (apache, mysql, postgresql, nginx, php-fpm)
 
-To start working throug the LSE, you need to set up the settings.json file.
+== Big changes ==
 
-It might look like this:
-{
-	"app": {
-		"pidfile": "/tmp/pndcc.pid",
-		"rootapp": "pkexec",
-		"systemcontrol": "systemctl"
-	},
-	"services": {
-		"nginx": {
-			"1": {
-				"name": "nginx",
-				"pid": "/run/nginx.pid"
-			},
-			"2": {
-				"name": "php-fpm",
-				"pid": "/opt/pndcc/pids/php-fpm.pid"
-			}
-		},
-		"httpd": {
-			"1": {
-				"name": "httpd",
-				"pid": "/run/httpd/httpd.pid"
-			}
-		},
-		"postgres": {
-			"1": {
-				"name": "postgresql",
-				"pid": "/opt/pndcc/pids/postgres.pid"
-			}
-		},
-		"mysqld": {
-			"1": {
-				"name": "mysqld",
-				"pid": "/run/mysqld/mysqld.pid"
-			}
-		}
-	}
-}
+[version 0.4.0]
+ * Removed unneeded functions.
+ * Documented some lines.
+ * Replaced pyinotify implementation with DBus + Systemd (URAH!!!)
+ * Fixed some methods
+ * Works well as the simplest solution
+ 
+To have ability to switchon or switchoff you need to runn application
+as root (or you have to have permissions to use systemd as a regular user)
 
-If you wanna start working immediatelly just fix the "pid" lines to the correct locations of services pid files.
-And maybe even little bit fix the "name" lines of the correct names of your services.
+== Some Little Info ==
 
-!!! This is the simples implementation. In a future application become more simple and useful.
+Little Server Executer is going to be the part 
+of a new system called Panda's Control Centre
