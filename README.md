@@ -29,7 +29,6 @@ as root
 of a new system called Panda's Control Centre
 
 #### Known bugs
-
 1. AboutDialog can be shown only once (Ticket #1)
 
 #### Settings Example
