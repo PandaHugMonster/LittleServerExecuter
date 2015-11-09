@@ -8,8 +8,14 @@ import sys
 import re
 import json
 import time
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Notify', '0.7')
+
 from threading import Thread
 from gi.repository import Gtk, Gio
+
 from random import randint
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import Notify
