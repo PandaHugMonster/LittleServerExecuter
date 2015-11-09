@@ -1,5 +1,5 @@
 # LittleServerExecuter
-LSE is the simplest python app that help instantly run systemd services
+LSE is the simplest python app that helps instantly run systemd services
 (like apache, mysql, postgresql, nginx, php-fpm and etc.)
 
 #### Big changes
