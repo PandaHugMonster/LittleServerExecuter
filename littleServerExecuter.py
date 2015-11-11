@@ -64,6 +64,8 @@ class LittleServerExecuterApp(Gtk.Application):
 	
 	""" Main Grid """
 	grid = None
+	""" Revealer """
+	revealer = None
 	
 	""" """
 	mainView = None
@@ -215,18 +217,18 @@ class LittleServerExecuterApp(Gtk.Application):
 
 		row = Gtk.ListBoxRow()
 		row.get_style_context().add_class("lse-sidebar-row")
-		row.add(Gtk.Label(label = "SystemD Controll"))
+		row.add(Gtk.Label(label = "SystemD Control"))
 		listbox.add(row)
 
 		row = Gtk.ListBoxRow()
 		row.get_style_context().add_class("lse-sidebar-row")
 		row.add(Gtk.Label(label = "Apache"))
-		#listbox.add(row)
+		listbox.add(row)
 
 		row = Gtk.ListBoxRow()
 		row.get_style_context().add_class("lse-sidebar-row")
 		row.add(Gtk.Label(label = "MariaDB"))
-		#listbox.add(row)
+		listbox.add(row)
 
 		return box
 
@@ -236,10 +238,19 @@ class LittleServerExecuterApp(Gtk.Application):
 				Gtk.Separator(orientation = Gtk.Orientation.HORIZONTAL))
 
 	def changeViewpoint(self, arg1, arg2):
-		box = Gtk.Box()
+		if self.revealer.get_reveal_child():
+			self.revealer.set_reveal_child(False)
+		else:
+			self.revealer.set_reveal_child(True)
+		#box = Gtk.Box()
+
 	def mainContent(self):
 		self.grid = Gtk.Grid()
-		return self.grid
+		self.revealer = Gtk.Revealer()
+		self.revealer.set_reveal_child(True)
+		self.revealer.add(self.grid)
+		self.revealer.add(Gtk.Label(label = "Test"))
+		return self.revealer
 
 	def startAllServicesNow(self, widget):
 		for (service, data) in self.services.items():
@@ -380,7 +391,8 @@ class LittleServerExecuterApp(Gtk.Application):
 		authors = [
 		    "Panda Hug Monster <ivan.guineapig@gmail.com>"
 		]
-		pixbuf = GdkPixbuf.Pixbuf.new_from_file(os.path.join(currentDirectory, 'drawing_LSE_logo.png'))
+		pixbuf = GdkPixbuf.Pixbuf.new_from_file(os.path.join(currentDirectory
+			, 'drawing_LSE_logo.png'))
 		aboutDialog.set_logo(pixbuf)
 		aboutDialog.set_authors(authors)
 		aboutDialog.connect("response", lambda w, r: aboutDialog.destroy())
