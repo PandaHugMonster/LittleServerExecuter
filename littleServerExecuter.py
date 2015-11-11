@@ -14,12 +14,12 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
 
 from threading import Thread
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk, Gio, Gdk, GObject, GdkPixbuf
 
 from random import randint
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import Notify
-DBusGMainLoop(set_as_default=True)
+DBusGMainLoop(set_as_default = True)
 
 from dbus import SystemBus, SessionBus, Interface
 import gobject
@@ -31,8 +31,11 @@ systemd = bus.get_object('org.freedesktop.systemd1'
 	, '/org/freedesktop/systemd1')
 
 class LittleServerExecuterApp(Gtk.Application):
+	""" Application Id """
+	appId = "org.pandahugmonster.lse"
+
 	""" Version string """
-	version = "0.4.1"
+	version = "0.4.2"
 
 	""" Settings file """
 	settingsFile = "settings.json"
@@ -50,8 +53,11 @@ class LittleServerExecuterApp(Gtk.Application):
 	settings = None
 	""" Gtk Window Object """
 	window = None
-	""" Gtk AboutWindow Object """
-	aboutWindow = None
+
+	""" Left HeaderBar """
+	appHB = None
+	""" Right HeaderBar """
+	partHB = None
 
 	""" GtkBuilder Object """
 	builder = None
@@ -59,6 +65,9 @@ class LittleServerExecuterApp(Gtk.Application):
 	""" Main Grid """
 	grid = None
 	
+	""" """
+	mainView = None
+
 	""" User's UID """
 	uid = None
 
@@ -68,9 +77,14 @@ class LittleServerExecuterApp(Gtk.Application):
 	def __init__(self):
 		self.pid = str(os.getpid())
 		self.uid = os.getuid()
-		Gtk.Application.__init__(self)
+		Gtk.Application.__init__(self, application_id = self.appId)
 		Notify.init(self.pid)
-	
+
+		Gtk.Settings.get_default().connect("notify::gtk_decoration_layout"
+			, self.updateDecorations)
+
+
+
 	""" Gtk.Application Startup """
 	def do_startup(self):
 		Gtk.Application.do_startup(self)
@@ -88,6 +102,10 @@ class LittleServerExecuterApp(Gtk.Application):
 		quitAction.connect("activate", self.appExit)
 		self.add_action(quitAction)
 		
+		"""settingsAction = Gio.SimpleAction.new("settings", None)
+		settingsAction.connect("activate", self.appSettings)
+		self.add_action(quitAction)"""
+
 		self.manager.Subscribe()
 		bus.add_signal_receiver(self.systemdJobRemoved,
                         'JobRemoved',
@@ -98,26 +116,47 @@ class LittleServerExecuterApp(Gtk.Application):
 	"""	Activation """
 	def do_activate(self):
 		self.builder = Gtk.Builder()
-		self.builder.add_from_file(currentDirectory + '/face.ui')
+		self.builder.add_from_file(os.path.join(currentDirectory, 'face.ui'))
 
-		self.window = self.builder.get_object("TheWindow")
-		self.aboutWindow = self.builder.get_object("aboutwindow")
+		self.window = self.builder.get_object("LseWindow")
+		self.window.hsize_group = Gtk.SizeGroup(mode = Gtk.SizeGroupMode.HORIZONTAL)
+		header = Gtk.Box()
 
-		self.aboutWindow.set_version(self.version)
+		""" Left HeaderBar """
+		self.appHB = Gtk.HeaderBar.new()
+		""" Right HeaderBar """
+		self.partHB = Gtk.HeaderBar.new()
 
-		ab = Gtk.HeaderBar.new()
-		ab.set_show_close_button(True)
-		ab.set_title(self.name)
+
+		self.appHB.props.show_close_button = True
+		self.partHB.props.show_close_button = True
+
+		self.updateDecorations(Gtk.Settings.get_default(), None)
+
+		self.appHB.set_title(self.name)
+		self.partHB.set_title("SystemD Controll")
+
+
+		self.mainView = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL)
+		sidebar = self.sideBar()
+		viewpoint = self.mainContent()
+
+		self.mainView.pack_start(sidebar, False, False, 0)
+		self.mainView.pack_start(Gtk.Separator(orientation = Gtk.Orientation.VERTICAL)
+			, False, False, 0)
+		self.mainView.pack_start(viewpoint, True, True, 0)
+
+		self.window.add(self.mainView)
 
 		if self.uid == 0:
-			ab.set_subtitle("You are Root")
+			self.appHB.set_subtitle("You are Root")
 			stopAllButton = Gtk.Button.new_from_icon_name("media-playback-stop"
 				, Gtk.IconSize.BUTTON)
-			ab.pack_start(stopAllButton)
+			self.partHB.pack_start(stopAllButton)
 
 			startAllButton = Gtk.Button.new_from_icon_name("media-playback-start"
 				, Gtk.IconSize.BUTTON)
-			ab.pack_start(startAllButton)
+			self.partHB.pack_start(startAllButton)
 
 			startAllButton.set_tooltip_text("Start all services that have"
 				+ " not been started yet")
@@ -128,22 +167,79 @@ class LittleServerExecuterApp(Gtk.Application):
 			stopAllButton.connect("clicked", self.stopAllServicesNow)
 
 		else:
-			ab.set_subtitle("You are a regular user")
+			self.appHB.set_subtitle("You are a regular user")
 			readOnlyStatus = Gtk.Image.new_from_icon_name("emblem-readonly"
 				, Gtk.IconSize.BUTTON)
 			readOnlyStatus.set_tooltip_text("Read-only mode")
-			ab.pack_end(readOnlyStatus)
-		self.window.set_titlebar(ab)
+			self.appHB.pack_end(readOnlyStatus)
 
-		self.grid = self.builder.get_object("switchersGrid")
+		header.pack_start(self.appHB, False, False, 0)
+		header.pack_start(Gtk.Separator(orientation = Gtk.Orientation.VERTICAL)
+			, False, False, 0)
+		header.pack_start(self.partHB, True, True, 0)
+
+		self.window.hsize_group.add_widget(self.appHB)
+		self.window.set_titlebar(header)
+
 		handlers = { "appExit": self.appExit }
 		self.builder.connect_signals(handlers)
-			
+
+		self.loadCss()
+
 		self.setSettings()
 
 		self.add_window(self.window)
 		self.window.show_all()
 
+	def loadCss(self):
+		cssProvider = Gtk.CssProvider()
+		cssProvider.load_from_path(os.path.join(currentDirectory, "application.css"))
+		screen = Gdk.Screen.get_default()
+		context = Gtk.StyleContext()
+		context.add_provider_for_screen(screen, cssProvider
+			, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+
+	def sideBar(self):
+		box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
+		listbox = Gtk.ListBox()
+		listbox.get_style_context().add_class("lse-sidebar")
+		listbox.set_size_request(250, -1)
+		listbox.connect("row-selected", self.changeViewpoint)
+		listbox.set_header_func(self.listHeaderFunc, None)
+		scroll = Gtk.ScrolledWindow()
+		scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+		scroll.add(listbox)
+		box.pack_start(scroll, True, True, 0)
+		self.window.hsize_group.add_widget(box)
+
+
+		row = Gtk.ListBoxRow()
+		row.get_style_context().add_class("lse-sidebar-row")
+		row.add(Gtk.Label(label = "SystemD Controll"))
+		listbox.add(row)
+
+		row = Gtk.ListBoxRow()
+		row.get_style_context().add_class("lse-sidebar-row")
+		row.add(Gtk.Label(label = "Apache"))
+		#listbox.add(row)
+
+		row = Gtk.ListBoxRow()
+		row.get_style_context().add_class("lse-sidebar-row")
+		row.add(Gtk.Label(label = "MariaDB"))
+		#listbox.add(row)
+
+		return box
+
+	def listHeaderFunc(self, row, before, user_data):
+		if before and not row.get_header():
+			row.set_header(
+				Gtk.Separator(orientation = Gtk.Orientation.HORIZONTAL))
+
+	def changeViewpoint(self, arg1, arg2):
+		box = Gtk.Box()
+	def mainContent(self):
+		self.grid = Gtk.Grid()
+		return self.grid
 
 	def startAllServicesNow(self, widget):
 		for (service, data) in self.services.items():
@@ -183,7 +279,7 @@ class LittleServerExecuterApp(Gtk.Application):
 
 	""" Get settings """
 	def setSettings(self):
-		json_data = open(currentDirectory + "/" + self.settingsFile)
+		json_data = open(os.path.join(currentDirectory, self.settingsFile))
 		self.settings = json.load(json_data)
 		json_data.close()
 		self.services = {}
@@ -207,6 +303,9 @@ class LittleServerExecuterApp(Gtk.Application):
 
 	""" Generating the table of services from the config """
 	def buildTable(self):
+		self.grid.set_row_spacing(15)
+		self.grid.set_column_spacing(20)
+		self.grid.get_style_context().add_class("lse-grid")
 		prev = None
 		for (service, data) in self.services.items():
 			switch = data['switch']
@@ -253,14 +352,44 @@ class LittleServerExecuterApp(Gtk.Application):
 						print("Service %s is stopd" % service)
 						data['switch'].set_state(False)
 
+	def updateDecorations(self, settings, pspec):
+		layout_desc = settings.props.gtk_decoration_layout
+		tokens = layout_desc.split(":", 2)
+		if tokens != None:
+			self.partHB.props.decoration_layout = ":" + tokens[1]
+			self.appHB.props.decoration_layout = tokens[0]
+
+
+
 	""" Run App About """
 	def appAbout(self, action, parameter):
-		self.aboutWindow.run()
+		""" Gtk AboutWindow Object """
+		aboutDialog = Gtk.AboutDialog()
+		aboutDialog.set_transient_for(self.window)
+		aboutDialog.set_title("About " + self.name)
+		aboutDialog.set_program_name(self.name)
+		aboutDialog.set_comments(
+			'The simplest Python + Gtk application to control '
+			+ 'Systemd services such as httpd, mariadb and so on. '
+			+ 'A part of the "Panda\'s Control Centre"')
+		aboutDialog.set_version(self.version)
+		aboutDialog.set_copyright("Copyright \xa9 2015 Ivan Ponomarev.")
+		aboutDialog.set_website("https://github.com/PandaHugMonster/LittleServerExecuter")
+		aboutDialog.set_website_label("github.com/PandaHugMonster/LittleServerExecuter")
+		aboutDialog.set_license_type(Gtk.License.GPL_2_0)
+		authors = [
+		    "Panda Hug Monster <ivan.guineapig@gmail.com>"
+		]
+		pixbuf = GdkPixbuf.Pixbuf.new_from_file(os.path.join(currentDirectory, 'drawing_LSE_logo.png'))
+		aboutDialog.set_logo(pixbuf)
+		aboutDialog.set_authors(authors)
+		aboutDialog.connect("response", lambda w, r: aboutDialog.destroy())
+		aboutDialog.show()
 
-	""" Method to out of app """
 	def appExit(self, parameter, act = None):
 		print("Exit")
 		self.quit()
+
 
 
 if __name__ == '__main__':

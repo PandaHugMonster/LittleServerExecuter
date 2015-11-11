@@ -1,0 +1,13 @@
+/* the sidebar */
+.lse-sidebar {
+	background-color: shade(@theme_bg_color, 0.99)
+}
+.lse-sidebar-row {
+	padding: 10px;
+}
+
+/* the titles */
+.lse-title {
+	font-weight: bold;
+}
+

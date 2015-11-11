@@ -6,8 +6,10 @@ LSE is the simplest python app that helps instantly run systemd services
 
 ##### Version 0.4.2 (current)
  * Changed UI
- * Added Apache configs updating functions
- * Added functions to update config of the application
+ * Added elements for future Apache configs updating functions
+ * Added elements for future functions to update config of the application
+ * Fixed bug #1
+ * Prepared migrating to a new standards
 
 ##### Version 0.4.1 (previous)
  * Disabled button when not authorized to do actions.
@@ -27,7 +29,6 @@ as root
 of a new system called Panda's Control Centre
 
 #### Known bugs
-1. AboutDialog can be shown only once (Ticket #1)
 
 #### Settings Example
 ```json
