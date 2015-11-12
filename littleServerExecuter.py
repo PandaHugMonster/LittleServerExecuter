@@ -64,9 +64,8 @@ class LittleServerExecuterApp(Gtk.Application):
 	
 	""" Main Grid """
 	grid = None
-	""" Revealer """
-	revealer = None
-	
+	stack = None
+
 	""" """
 	mainView = None
 
@@ -74,6 +73,7 @@ class LittleServerExecuterApp(Gtk.Application):
 	uid = None
 
 	name = "Little Server Executer"
+	dynbox = None
 
 	""" Constructor """
 	def __init__(self):
@@ -132,7 +132,7 @@ class LittleServerExecuterApp(Gtk.Application):
 
 		self.appHB.props.show_close_button = True
 		self.partHB.props.show_close_button = True
-
+		self.recomposeUI(0)
 		self.updateDecorations(Gtk.Settings.get_default(), None)
 
 		self.appHB.set_title(self.name)
@@ -152,22 +152,6 @@ class LittleServerExecuterApp(Gtk.Application):
 
 		if self.uid == 0:
 			self.appHB.set_subtitle("You are Root")
-			stopAllButton = Gtk.Button.new_from_icon_name("media-playback-stop"
-				, Gtk.IconSize.BUTTON)
-			self.partHB.pack_start(stopAllButton)
-
-			startAllButton = Gtk.Button.new_from_icon_name("media-playback-start"
-				, Gtk.IconSize.BUTTON)
-			self.partHB.pack_start(startAllButton)
-
-			startAllButton.set_tooltip_text("Start all services that have"
-				+ " not been started yet")
-			stopAllButton.set_tooltip_text("Stop all services that have"
-				+ " not been stoped yet")
-
-			startAllButton.connect("clicked", self.startAllServicesNow)
-			stopAllButton.connect("clicked", self.stopAllServicesNow)
-
 		else:
 			self.appHB.set_subtitle("You are a regular user")
 			readOnlyStatus = Gtk.Image.new_from_icon_name("emblem-readonly"
@@ -223,12 +207,12 @@ class LittleServerExecuterApp(Gtk.Application):
 		row = Gtk.ListBoxRow()
 		row.get_style_context().add_class("lse-sidebar-row")
 		row.add(Gtk.Label(label = "Apache"))
-		listbox.add(row)
+		#listbox.add(row)
 
 		row = Gtk.ListBoxRow()
 		row.get_style_context().add_class("lse-sidebar-row")
 		row.add(Gtk.Label(label = "MariaDB"))
-		listbox.add(row)
+		#listbox.add(row)
 
 		return box
 
@@ -237,20 +221,47 @@ class LittleServerExecuterApp(Gtk.Application):
 			row.set_header(
 				Gtk.Separator(orientation = Gtk.Orientation.HORIZONTAL))
 
-	def changeViewpoint(self, arg1, arg2):
-		if self.revealer.get_reveal_child():
-			self.revealer.set_reveal_child(False)
-		else:
-			self.revealer.set_reveal_child(True)
-		#box = Gtk.Box()
+	def changeViewpoint(self, list, row):
+		if isinstance(row, Gtk.ListBoxRow):
+			self.stack.set_visible_child_name("%i" % row.get_index())
+			self.recomposeUI(row.get_index())
+
+	def recomposeUI(self, number):
+		"""if self.uid == 0:
+			stopAllButton = Gtk.Button.new_from_icon_name("media-playback-stop"
+				, Gtk.IconSize.BUTTON)
+
+			startAllButton = Gtk.Button.new_from_icon_name("media-playback-start"
+				, Gtk.IconSize.BUTTON)
+			startAllButton.set_tooltip_text("Start all services that have"
+				+ " not been started yet")
+			stopAllButton.set_tooltip_text("Stop all services that have"
+				+ " not been stoped yet")
+			startAllButton.connect("clicked", self.startAllServicesNow)
+			stopAllButton.connect("clicked", self.stopAllServicesNow)
+
+			#self.dynbox.pack_start(stopAllButton, False, False, 0)
+			#self.dynbox.pack_start(startAllButton, False, False, 0)
+
+			self.partHB.pack_start(stopAllButton)
+			self.partHB.pack_start(startAllButton)"""
+
+		if number == 0:
+			self.partHB.set_title("SystemD Control")
+		elif number == 1:
+			self.partHB.set_title("Apache")
+		elif number == 2:
+			self.partHB.set_title("MariaDB")
 
 	def mainContent(self):
 		self.grid = Gtk.Grid()
-		self.revealer = Gtk.Revealer()
-		self.revealer.set_reveal_child(True)
-		self.revealer.add(self.grid)
-		self.revealer.add(Gtk.Label(label = "Test"))
-		return self.revealer
+		self.grid.set_border_width(10)
+		self.stack = Gtk.Stack()
+		self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_UP_DOWN)
+		self.stack.add_named(self.grid, "0")
+		self.stack.add_named(Gtk.Label(label = "Apache"), "1")
+		self.stack.add_named(Gtk.Button(label = "MariaDB"), "2")
+		return self.stack
 
 	def startAllServicesNow(self, widget):
 		for (service, data) in self.services.items():
