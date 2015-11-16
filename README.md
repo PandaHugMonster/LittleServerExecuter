@@ -32,7 +32,7 @@ as root
 of a new system called Panda's Control Centre
 3. This project does not contain the best style of development-code - this is related
 to the really important moment: This project is my GTK+Python3 experiment, so later
-code will be in a better shape. Arguing about that my absolutely unlogical code
+code will be in a better shape. Arguing about that my absolutely unlogical code -
 will be deleted - because I'm well informed about this problem, and it exists only
 because of experimenting, and doesn't reflect my tallents. Thank you for your understanding
 
