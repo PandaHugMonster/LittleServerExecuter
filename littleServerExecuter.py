@@ -4,6 +4,8 @@
 # Version: 0.4
 
 import os
+from os import listdir
+from os.path import isfile
 import sys
 import re
 import json
@@ -120,11 +122,12 @@ class LittleServerExecuterApp(Gtk.Application):
 	
 	"""	Activation """
 	def do_activate(self):
-		self.preaprePages()
 		self.builder = Gtk.Builder()
 		self.builder.add_from_file(os.path.join(currentDirectory, 'face.ui'))
+		self.preaprePages()
 
 		self.window = self.builder.get_object("LseWindow")
+
 		self.window.hsize_group = Gtk.SizeGroup(mode = Gtk.SizeGroupMode.HORIZONTAL)
 		self.header = Gtk.Box()
 
@@ -137,7 +140,7 @@ class LittleServerExecuterApp(Gtk.Application):
 
 		self.mainView = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL)
 
-		self.recomposeUI("systemd")
+		#self.recomposeUI("systemd")
 		sidebar = self.sideBar()
 		viewpoint = self.mainContent()
 
@@ -226,7 +229,21 @@ class LittleServerExecuterApp(Gtk.Application):
 		self.pages[named] = page
 
 		named = "apache"
-		page = LSEPage.LSEPage(name = named, content = Gtk.Label(label = "Apache"), title = "Apache")
+		page = LSEPage.LSEPage(name = named, content = self.builder.get_object("ApacheService")
+			, title = "Apache")
+		scroll = Gtk.ScrolledWindow()
+		colbox = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 5)
+		scroll.add(colbox)
+		page.content.append_page(scroll, Gtk.Label(label = "List of modules"))
+
+		modpath = "/etc/httpd/modules/"
+		for fil in listdir(modpath):
+			if isfile(os.path.join(modpath, fil)):
+				rowbox = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing = 30)
+				rowbox.add(Gtk.Label(label = fil))
+				#rowbox.add(Gtk.Label(label = "Module 1 Description"))
+				colbox.add(rowbox)
+
 		self.pages[named] = page
 
 		named = "mysql"
