@@ -5,7 +5,6 @@
   <object class="GtkNotebook" id="ApacheService">
     <property name="visible">True</property>
     <property name="can_focus">True</property>
-    <property name="show_border">False</property>
     <child>
       <placeholder/>
     </child>
@@ -28,13 +27,35 @@
   <object class="GtkApplicationWindow" id="LseWindow">
     <property name="can_focus">False</property>
     <property name="window_position">center</property>
-    <property name="default_width">800</property>
-    <property name="default_height">600</property>
+    <property name="default_width">950</property>
+    <property name="default_height">700</property>
     <property name="icon">drawing_LSE_logo.svg</property>
     <property name="startup_id">org.pandahugmonster.lse</property>
     <property name="show_menubar">False</property>
     <signal name="destroy" handler="appExit" swapped="no"/>
     <child>
+      <placeholder/>
+    </child>
+  </object>
+  <object class="GtkNotebook" id="MysqlService">
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <child>
+      <placeholder/>
+    </child>
+    <child type="tab">
+      <placeholder/>
+    </child>
+    <child>
+      <placeholder/>
+    </child>
+    <child type="tab">
+      <placeholder/>
+    </child>
+    <child>
+      <placeholder/>
+    </child>
+    <child type="tab">
       <placeholder/>
     </child>
   </object>

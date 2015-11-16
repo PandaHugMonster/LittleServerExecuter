@@ -39,7 +39,7 @@ class LittleServerExecuterApp(Gtk.Application):
 	appId = "org.pandahugmonster.lse"
 
 	""" Version string """
-	version = "0.4.2"
+	version = "0.4.3"
 
 	""" Settings file """
 	settingsFile = "settings.json"
@@ -224,7 +224,7 @@ class LittleServerExecuterApp(Gtk.Application):
 
 		named = "systemd"
 		self.grid = Gtk.Grid()
-		self.grid.set_border_width(10)
+		self.grid.set_border_width(20)
 		page = LSEPage.LSEPage(name = named, content = self.grid, title = "SystemD Control")
 		self.pages[named] = page
 
@@ -232,22 +232,58 @@ class LittleServerExecuterApp(Gtk.Application):
 		page = LSEPage.LSEPage(name = named, content = self.builder.get_object("ApacheService")
 			, title = "Apache")
 		scroll = Gtk.ScrolledWindow()
-		colbox = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 5)
+		colbox = Gtk.Grid()
+		colbox.set_border_width(20)
+		colbox.set_row_homogeneous(True)
+		colbox.set_row_spacing(10)
+		colbox.set_column_spacing(10)
 		scroll.add(colbox)
 		page.content.append_page(scroll, Gtk.Label(label = "List of modules"))
 
 		modpath = "/etc/httpd/modules/"
-		for fil in listdir(modpath):
+		c = r = 0
+		for fil in list(sorted(listdir(modpath))):
 			if isfile(os.path.join(modpath, fil)):
-				rowbox = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing = 30)
-				rowbox.add(Gtk.Label(label = fil))
-				#rowbox.add(Gtk.Label(label = "Module 1 Description"))
-				colbox.add(rowbox)
+				colbox.attach(Gtk.Label(label = fil, xalign = 0), c, r, 1, 1)
 
+			if (c + 1) % 3 == 0:
+				r += 1
+				c = 0
+			else:
+				c += 1
+		scrollView = Gtk.ScrolledWindow()
+		configView = Gtk.TextView()
+		scrollView.add(configView)
+		page.content.append_page(scrollView, Gtk.Label(label = "Apache Config View"))
+		txtbuf = configView.get_buffer()
+
+		confpath = "/etc/httpd/conf/"
+		result = ""
+		with open(os.path.join(confpath, "httpd.conf")) as f:
+			for line in f:
+				result += line
+
+		txtbuf.set_text(result)
+		result = None
 		self.pages[named] = page
 
 		named = "mysql"
-		page = LSEPage.LSEPage(name = named, content = Gtk.Label(label = "Mysql"), title = "Mysql")
+		page = LSEPage.LSEPage(name = named, content = self.builder.get_object("MysqlService"), title = "Mysql")
+
+		scrollView = Gtk.ScrolledWindow()
+		configView = Gtk.TextView()
+		scrollView.add(configView)
+		page.content.append_page(scrollView, Gtk.Label(label = "Mysql Config View"))
+		txtbuf = configView.get_buffer()
+
+		confpath = "/etc/mysql/"
+		result = ""
+		with open(os.path.join(confpath, "my.cnf")) as f:
+			for line in f:
+				result += line
+
+		txtbuf.set_text(result)
+		result = None
 		self.pages[named] = page
 
 	def recomposeUI(self, name):
