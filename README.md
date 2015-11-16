@@ -12,6 +12,8 @@ LSE is the simplest python app that helps instantly run systemd services
  * Added elements for future Apache configs updating functions
  * Added elements for future functions to update config of the application
  * Fixed bug #1
+ * Added groupping
+ * Added group buttons
  * Prepared migrating to a new standards
 
 ##### Version 0.4.1 (previous)
@@ -40,9 +42,18 @@ of a new system called Panda's Control Centre
 		"pidfile": "/tmp/pndcc.pid"
 	},
 	"services": {
-		"httpd.service": "Apache server",
-		"postgresql.service": "Postgres server",
-		"mysqld.service": "MySQL server"
+		"Devices": {
+			"bluetooth.service": "Bluetooth service",
+			"colord.service": "Manage, Install and Generate Color Profiles",
+			"udisks2.service": "Disk Manager"
+		},
+		"Web Group": {
+			"httpd.service": "Apache server"
+		},
+		"Other": {
+			"upower.service": "Daemon for power management",
+			"geoclue.service": "Location Lookup Service"
+		}
 	}
 }
 ````

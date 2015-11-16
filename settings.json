@@ -3,8 +3,17 @@
 		"pidfile": "/tmp/pndcc.pid"
 	},
 	"services": {
-		"httpd.service": "Apache server",
-		"postgresql.service": "Postgres server",
-		"mysqld.service": "MySQL server"
+		"Devices": {
+			"bluetooth.service": "Bluetooth service",
+			"colord.service": "Manage, Install and Generate Color Profiles",
+			"udisks2.service": "Disk Manager"
+		},
+		"Web Group": {
+			"httpd.service": "Apache server"
+		},
+		"Other": {
+			"upower.service": "Daemon for power management",
+			"geoclue.service": "Location Lookup Service"
+		}
 	}
 }
