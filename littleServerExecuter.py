@@ -4,6 +4,7 @@
 # Version: 0.4
 
 import os
+import datetime
 from os import listdir
 from os.path import isfile
 import sys
@@ -356,7 +357,8 @@ class LittleServerExecuterApp(Gtk.Application):
 					'interface': service_interface,
 					'title': title,
 					'state': state,
-					'switch': Gtk.Switch()
+					'switch': Gtk.Switch(),
+					'spinner': Gtk.Spinner(),
 				}
 				print("%s = %s | %s" % (service, title, state))
 		
@@ -399,9 +401,10 @@ class LittleServerExecuterApp(Gtk.Application):
 			prepre = None
 			for (service, data) in datag.items():
 				switch = data['switch']
+				spinner = data['spinner']
 				switch.set_active(data['state'] == 'active')
 				if self.uid == 0:
-					switch.connect("notify::active", self.on_switch_activated)
+					switch.connect("notify::active", self.workWithService)
 				else:
 					switch.set_sensitive(False)
 				label = Gtk.Label(label = data['title'], xalign = 0)
@@ -415,16 +418,19 @@ class LittleServerExecuterApp(Gtk.Application):
 						, Gtk.PositionType.BOTTOM, 1, 1)
 				self.grid.attach_next_to(label, switch
 					, Gtk.PositionType.RIGHT, 1, 1)
+				self.grid.attach_next_to(spinner, label
+					, Gtk.PositionType.RIGHT, 1, 1)
 				prev = switch
 
-	def on_switch_activated(self, switch, data):
-		self.workWithService(switch)
 
-
-	def workWithService(self, switch):
+	def workWithService(self, switch, data):
 		for (group, datag) in self.services.items():
 			for (service, data) in datag.items():
 				if data['switch'] is switch:
+					data["spinner"].start()
+					data['lastactiontime'] = datetime.datetime.now()
+					last = data["lastactiontime"]
+
 					prevState = switch.get_active()
 					if prevState:
 						self.startService(service, data)
@@ -434,8 +440,10 @@ class LittleServerExecuterApp(Gtk.Application):
 	def systemdJobRemoved(self, arg1, path, service, status):
 		for (group, datag) in self.services.items():
 			for (servicein, data) in datag.items():
+				spinner = data["spinner"]
 				if servicein == service:
 					if (status == 'done'):
+						spinner.stop()
 						res = data['interface'].Get('org.freedesktop.systemd1.Unit',
 							'ActiveState',
 							dbus_interface='org.freedesktop.DBus.Properties')

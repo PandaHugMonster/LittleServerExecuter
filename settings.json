@@ -8,6 +8,10 @@
 			"colord.service": "Manage, Install and Generate Color Profiles",
 			"udisks2.service": "Disk Manager"
 		},
+		"Servers": {
+			"glassfish.service": "Glassfish4 server",
+			"httpd.service": "Apache server"
+		},
 		"Web Group": {
 			"httpd.service": "Apache server"
 		},
