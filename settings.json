@@ -13,7 +13,11 @@
 			"httpd.service": "Apache server"
 		},
 		"Web Group": {
-			"httpd.service": "Apache server"
+			"httpd.service": "Apache server",
+			"mysqld.service": "Mysql Database"
+		},
+		"Databases": {
+			"mysqld.service": "Mysql Database"
 		},
 		"Other": {
 			"upower.service": "Daemon for power management",

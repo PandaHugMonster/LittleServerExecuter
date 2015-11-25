@@ -98,6 +98,7 @@ class LittleServerExecuterApp(Gtk.Application):
 		Gtk.Application.do_startup(self)
 		
 		menu = Gio.Menu()
+		menu.append("Settings", "app.settings")
 		menu.append("About", "app.about")
 		menu.append("Exit", "app.quit")
 		self.set_app_menu(menu)
@@ -110,9 +111,9 @@ class LittleServerExecuterApp(Gtk.Application):
 		quitAction.connect("activate", self.appExit)
 		self.add_action(quitAction)
 		
-		"""settingsAction = Gio.SimpleAction.new("settings", None)
+		settingsAction = Gio.SimpleAction.new("settings", None)
 		settingsAction.connect("activate", self.appSettings)
-		self.add_action(quitAction)"""
+		self.add_action(settingsAction)
 
 		self.manager.Subscribe()
 		bus.add_signal_receiver(self.systemdJobRemoved,
@@ -226,7 +227,9 @@ class LittleServerExecuterApp(Gtk.Application):
 		named = "systemd"
 		self.grid = Gtk.Grid()
 		self.grid.set_border_width(20)
-		page = LSEPage.LSEPage(name = named, content = self.grid, title = "SystemD Control")
+		sw = Gtk.ScrolledWindow()
+		sw.add(self.grid)
+		page = LSEPage.LSEPage(name = named, content = sw, title = "SystemD Control")
 		self.pages[named] = page
 
 		named = "apache"
@@ -466,33 +469,28 @@ class LittleServerExecuterApp(Gtk.Application):
 	""" Run App About """
 	def appAbout(self, action, parameter):
 		""" Gtk AboutWindow Object """
-		aboutDialog = Gtk.AboutDialog()
-		aboutDialog.set_transient_for(self.window)
+		aboutDialog = self.builder.get_object("LseAboutDialog")
+		#aboutDialog.set_transient_for(self.window)
 		aboutDialog.set_title("About " + self.name)
 		aboutDialog.set_program_name(self.name)
-		aboutDialog.set_comments(
-			'The simplest Python + Gtk application to control '
-			+ 'Systemd services such as httpd, mariadb and so on. '
-			+ 'A part of the "Panda\'s Control Centre"')
 		aboutDialog.set_version(self.version)
-		aboutDialog.set_copyright("Copyright \xa9 2015 Ivan Ponomarev.")
-		aboutDialog.set_website("https://github.com/PandaHugMonster/LittleServerExecuter")
-		aboutDialog.set_website_label("github.com/PandaHugMonster/LittleServerExecuter")
-		aboutDialog.set_license_type(Gtk.License.GPL_2_0)
-		authors = [
-		    "Panda Hug Monster <ivan.guineapig@gmail.com>"
-		]
-		pixbuf = GdkPixbuf.Pixbuf.new_from_file(os.path.join(currentDirectory
-			, 'drawing_LSE_logo.png'))
-		aboutDialog.set_logo(pixbuf)
-		aboutDialog.set_authors(authors)
-		aboutDialog.connect("response", lambda w, r: aboutDialog.destroy())
-		aboutDialog.show()
+		aboutDialog.run()
+		aboutDialog.hide()
 
 	def appExit(self, parameter, act = None):
 		print("Exit")
 		self.quit()
 
+
+	def appSettings(self, parameter, act = None):
+		settingsDialog = self.builder.get_object("LseSettingsDialog")
+		#settingsDialog.set_transient_for(self.window)
+		response = settingsDialog.run()
+		if response == -5:
+			print("Save me [not implemented yet]")
+		elif response == -6:
+			print("Cancel me [not implemented yet]")
+		settingsDialog.hide()
 
 
 if __name__ == '__main__':
