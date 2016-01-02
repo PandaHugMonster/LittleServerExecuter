@@ -3,50 +3,36 @@
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
 
-import os
-import datetime
-from os import listdir
-from os.path import isfile
-import sys
-import re
-import json
-import time
+import os, datetime, sys, re, json, time
 
-import LSEPage
+from LSEPage import LSEPage
+from LSEPolkitAuth import PolkitAuth
+from LSEDBus import DBus
+from LSESystemd import Systemd
 
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
 
 from threading import Thread
-from gi.repository import Gtk, Gio, Gdk, GObject, GdkPixbuf
-
-from random import randint
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import Notify
+from gi.repository import Gtk, Gio, Gdk, GObject, GdkPixbuf, Notify
 DBusGMainLoop(set_as_default = True)
 
-from dbus import SystemBus, SessionBus, Interface
 import gobject
 
 currentDirectory = os.path.dirname(os.path.abspath(__file__))
-
-bus = SystemBus()
-systemd = bus.get_object('org.freedesktop.systemd1'
-	, '/org/freedesktop/systemd1')
 
 class LittleServerExecuterApp(Gtk.Application):
 	""" Application Id """
 	appId = "org.pandahugmonster.lse"
 
 	""" Version string """
-	version = "0.4.3"
+	version = "0.4.4"
 
 	""" Settings file """
 	settingsFile = "settings.json"
 
-	""" SystemD Manager """
-	manager = None
 
 	""" Application Pid Number """
 	pid = None
@@ -74,58 +60,46 @@ class LittleServerExecuterApp(Gtk.Application):
 	""" """
 	mainView = None
 
-	""" User's UID """
-	uid = None
-
 	name = "Little Server Executer"
 	dynbox = None
 	prevPage = None
 
+	polkitHelper = None
+	protectedWidgets = []
+
+	switchesServiceLock = False
+
 	""" Constructor """
 	def __init__(self):
 		self.pid = str(os.getpid())
-		self.uid = os.getuid()
 		Gtk.Application.__init__(self, application_id = self.appId)
 		Notify.init(self.pid)
 
 		Gtk.Settings.get_default().connect("notify::gtk_decoration_layout"
 			, self.updateDecorations)
 
+		self.dbus = DBus()
+		self.polkitHelper = PolkitAuth(self.dbus, self.pid)
+		self.systemd = Systemd(self.dbus, self.polkitHelper)
+
+		self.builder = Gtk.Builder()
+		self.builder.add_from_file(os.path.join(currentDirectory, 'face.ui'))
 
 
 	""" Gtk.Application Startup """
 	def do_startup(self):
 		Gtk.Application.do_startup(self)
-		
-		menu = Gio.Menu()
-		menu.append("Settings", "app.settings")
-		menu.append("About", "app.about")
-		menu.append("Exit", "app.quit")
-		self.set_app_menu(menu)
-		
-		aboutAction = Gio.SimpleAction.new("about", None)
-		aboutAction.connect("activate", self.appAbout)
-		self.add_action(aboutAction)
-		
-		quitAction = Gio.SimpleAction.new("quit", None)
-		quitAction.connect("activate", self.appExit)
-		self.add_action(quitAction)
-		
-		settingsAction = Gio.SimpleAction.new("settings", None)
-		settingsAction.connect("activate", self.appSettings)
-		self.add_action(settingsAction)
 
-		self.manager.Subscribe()
-		bus.add_signal_receiver(self.systemdJobRemoved,
-			'JobRemoved',
-			'org.freedesktop.systemd1.Manager',
-			'org.freedesktop.systemd1',
-			'/org/freedesktop/systemd1')
-	
-	"""	Activation """
+		self.set_app_menu(self.builder.get_object("appmenu"))
+
+		self.attachActions()
+
+		self.systemd.signalReceiver(self.systemdJobRemoved)
+
+
+
+	""" Activation """
 	def do_activate(self):
-		self.builder = Gtk.Builder()
-		self.builder.add_from_file(os.path.join(currentDirectory, 'face.ui'))
 		self.preaprePages()
 
 		self.window = self.builder.get_object("LseWindow")
@@ -153,14 +127,18 @@ class LittleServerExecuterApp(Gtk.Application):
 
 		self.window.add(self.mainView)
 
-		if self.uid == 0:
-			self.appHB.set_subtitle("You are Root")
-		else:
-			self.appHB.set_subtitle("You are a regular user")
-			readOnlyStatus = Gtk.Image.new_from_icon_name("emblem-readonly"
-				, Gtk.IconSize.BUTTON)
-			readOnlyStatus.set_tooltip_text("Read-only mode")
-			self.appHB.pack_end(readOnlyStatus)
+		lockbutton = Gtk.ToggleButton(label = "Locked")
+
+		icon_theme = Gtk.IconTheme.get_default()
+		icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
+		icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
+		img_lock = Gtk.Image.new_from_pixbuf(icon_info.load_icon())
+
+		lockbutton.set_image(img_lock)
+		lockbutton.set_always_show_image(True)
+
+		lockbutton.connect("clicked", self.obtainPermission)
+		self.partHB.pack_end(lockbutton)
 
 		self.header.add(self.appHB)
 		self.header.add(Gtk.Separator(orientation = Gtk.Orientation.VERTICAL))
@@ -173,11 +151,45 @@ class LittleServerExecuterApp(Gtk.Application):
 		self.builder.connect_signals(handlers)
 
 		self.loadCss()
-
 		self.setSettings()
 
 		self.add_window(self.window)
+
+		self.changeSesitivityOfProtectedWidgets(self.polkitHelper.granted)
+
 		self.window.show_all()
+
+	def obtainPermission(self, lockbutton):
+
+		if lockbutton.get_active():
+			managable = self.polkitHelper.grantAccess(Systemd.ACTION_MANAGE_UNITS)
+		else:
+			if self.polkitHelper.granted:
+				self.polkitHelper.revokeAccess()
+			managable = False
+
+		icon_theme = Gtk.IconTheme.get_default()
+
+		if managable:
+			subName = 'Unlocked'
+			icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-allow-symbolic")
+		else:
+			subName = 'Locked'
+			icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
+
+		icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
+		img_lock = Gtk.Image.new_from_pixbuf(icon_info.load_icon())
+
+		lockbutton.set_image(img_lock)
+
+		lockbutton.set_label(subName)
+		lockbutton.set_active(managable)
+
+		self.changeSesitivityOfProtectedWidgets(managable)
+
+	def changeSesitivityOfProtectedWidgets(self, active = False):
+		for widget in self.protectedWidgets:
+			widget.set_sensitive(active)
 
 	def loadCss(self):
 		cssProvider = Gtk.CssProvider()
@@ -229,32 +241,13 @@ class LittleServerExecuterApp(Gtk.Application):
 		self.grid.set_border_width(20)
 		sw = Gtk.ScrolledWindow()
 		sw.add(self.grid)
-		page = LSEPage.LSEPage(name = named, content = sw, title = "SystemD Control")
+		page = LSEPage(name = named, content = sw, title = "SystemD Control")
 		self.pages[named] = page
 
 		named = "apache"
-		page = LSEPage.LSEPage(name = named, content = self.builder.get_object("ApacheService")
+		page = LSEPage(name = named, content = Gtk.Notebook.new()
 			, title = "Apache")
-		scroll = Gtk.ScrolledWindow()
-		colbox = Gtk.Grid()
-		colbox.set_border_width(20)
-		colbox.set_row_homogeneous(True)
-		colbox.set_row_spacing(10)
-		colbox.set_column_spacing(10)
-		scroll.add(colbox)
-		page.content.append_page(scroll, Gtk.Label(label = "List of modules"))
 
-		modpath = "/etc/httpd/modules/"
-		c = r = 0
-		for fil in list(sorted(listdir(modpath))):
-			if isfile(os.path.join(modpath, fil)):
-				colbox.attach(Gtk.Label(label = fil, xalign = 0), c, r, 1, 1)
-
-			if (c + 1) % 3 == 0:
-				r += 1
-				c = 0
-			else:
-				c += 1
 		scrollView = Gtk.ScrolledWindow()
 		configView = Gtk.TextView()
 		scrollView.add(configView)
@@ -269,10 +262,35 @@ class LittleServerExecuterApp(Gtk.Application):
 
 		txtbuf.set_text(result)
 		result = None
+
+
+		scroll = Gtk.ScrolledWindow()
+		colbox = Gtk.Grid()
+		colbox.set_border_width(20)
+		colbox.set_row_homogeneous(True)
+		colbox.set_row_spacing(10)
+		colbox.set_column_spacing(10)
+		scroll.add(colbox)
+		page.content.append_page(scroll, Gtk.Label(label = "List of modules"))
+		#rep = page.content.get_nth_page(0)
+		#rep.pack_start(scroll)
+
+		modpath = "/etc/httpd/modules/"
+		c = r = 0
+		for fil in list(sorted(os.listdir(modpath))):
+			if os.path.isfile(os.path.join(modpath, fil)):
+				colbox.attach(Gtk.Label(label = fil, xalign = 0), c, r, 1, 1)
+
+			if (c + 1) % 3 == 0:
+				r += 1
+				c = 0
+			else:
+				c += 1
+
 		self.pages[named] = page
 
 		named = "mysql"
-		page = LSEPage.LSEPage(name = named, content = self.builder.get_object("MysqlService"), title = "Mysql")
+		page = LSEPage(name = named, content = Gtk.Notebook.new(), title = "Mysql")
 
 		scrollView = Gtk.ScrolledWindow()
 		configView = Gtk.TextView()
@@ -289,6 +307,48 @@ class LittleServerExecuterApp(Gtk.Application):
 		txtbuf.set_text(result)
 		result = None
 		self.pages[named] = page
+
+		named = "php"
+		page = LSEPage(name = named, content = Gtk.Notebook.new(), title = "PHP")
+		##
+		scrollView = Gtk.ScrolledWindow()
+		configView = Gtk.TextView()
+		scrollView.add(configView)
+		page.content.append_page(scrollView, Gtk.Label(label = "PHP Config View"))
+		txtbuf = configView.get_buffer()
+
+		confpath = "/etc/php/"
+		result = ""
+		with open(os.path.join(confpath, "php.ini")) as f:
+			for line in f:
+				result += line
+
+		txtbuf.set_text(result)
+		result = None
+
+		##
+		scroll = Gtk.ScrolledWindow()
+		colbox = Gtk.Grid()
+		colbox.set_border_width(20)
+		colbox.set_row_homogeneous(True)
+		colbox.set_row_spacing(10)
+		colbox.set_column_spacing(10)
+		scroll.add(colbox)
+		page.content.append_page(scroll, Gtk.Label(label = "List of modules"))
+		modpath = "/usr/lib/php/modules/"
+		c = r = 0
+		for fil in list(sorted(os.listdir(modpath))):
+			if os.path.isfile(os.path.join(modpath, fil)):
+				colbox.attach(Gtk.Label(label = fil, xalign = 0), c, r, 1, 1)
+
+			if (c + 1) % 3 == 0:
+				r += 1
+				c = 0
+			else:
+				c += 1
+
+		self.pages[named] = page
+		# /usr/lib/php/modules/
 
 	def recomposeUI(self, name):
 		self.updateDecorations(Gtk.Settings.get_default(), None)
@@ -314,31 +374,10 @@ class LittleServerExecuterApp(Gtk.Application):
 					if data['switch'].get_active() != action:
 						data['switch'].set_active(action)
 
-	def nonAuthorized(self):
+	def nonAuthorized(self, e):
 		notification = Notify.Notification.new(self.name,
 			 "You are not authorized to do this", "dialog-error")
 		notification.show()
-
-	def startService(self, service, data):
-		try:
-			self.manager.StartUnit(service, 'replace')
-			allGood = True
-		except:
-			self.nonAuthorized()
-			allGood = False
-
-		return allGood
-
-	def stopService(self, service, data):
-		try:
-			self.manager.StopUnit(service, 'replace')
-			allGood = True
-		except:
-			self.nonAuthorized()
-			allGood = False
-			
-		return allGood
-		
 
 	""" Get settings """
 	def setSettings(self):
@@ -349,8 +388,8 @@ class LittleServerExecuterApp(Gtk.Application):
 		for (group, datag) in self.settings['services'].items():
 			self.services[group] = {}
 			for (service, title) in datag.items():
-				service_unit = self.manager.LoadUnit(service)
-				service_interface = bus.get_object('org.freedesktop.systemd1'
+				service_unit = self.systemd.loadUnit(service)
+				service_interface = self.dbus.getObject('org.freedesktop.systemd1'
 					, str(service_unit))
 				state = service_interface.Get('org.freedesktop.systemd1.Unit',
 					'ActiveState',
@@ -363,7 +402,7 @@ class LittleServerExecuterApp(Gtk.Application):
 					'switch': Gtk.Switch(),
 					'spinner': Gtk.Spinner(),
 				}
-				print("%s = %s | %s" % (service, title, state))
+				#print("%s = %s | %s" % (service, title, state))
 		
 		self.buildTable()
 
@@ -380,19 +419,22 @@ class LittleServerExecuterApp(Gtk.Application):
 			groupName = Gtk.Label(label = group)
 			box = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL)
 
-			if self.uid == 0:
-				stopAllButton = Gtk.Button.new_from_icon_name("media-playback-stop"
-					, Gtk.IconSize.BUTTON)
-				startAllButton = Gtk.Button.new_from_icon_name("media-playback-start"
-					, Gtk.IconSize.BUTTON)
-				startAllButton.group = group
-				stopAllButton.group = group
+			#if self.uid == 0:
+			stopAllButton = Gtk.Button.new_from_icon_name("media-playback-stop"
+				, Gtk.IconSize.BUTTON)
+			startAllButton = Gtk.Button.new_from_icon_name("media-playback-start"
+				, Gtk.IconSize.BUTTON)
+			startAllButton.group = group
+			stopAllButton.group = group
 
-				startAllButton.connect("clicked", lambda widget: self.processGroupServicesNow(True, widget.group))
-				stopAllButton.connect("clicked", lambda widget: self.processGroupServicesNow(False, widget.group))
+			startAllButton.connect("clicked", lambda widget: self.processGroupServicesNow(True, widget.group))
+			stopAllButton.connect("clicked", lambda widget: self.processGroupServicesNow(False, widget.group))
 
-				box.add(startAllButton)
-				box.add(stopAllButton)
+			self.protectedWidgets.append(startAllButton)
+			self.protectedWidgets.append(stopAllButton)
+
+			box.add(startAllButton)
+			box.add(stopAllButton)
 
 			if not prev:
 				self.grid.add(groupName)
@@ -406,10 +448,8 @@ class LittleServerExecuterApp(Gtk.Application):
 				switch = data['switch']
 				spinner = data['spinner']
 				switch.set_active(data['state'] == 'active')
-				if self.uid == 0:
-					switch.connect("notify::active", self.workWithService)
-				else:
-					switch.set_sensitive(False)
+				switch.connect("notify::active", self.workWithService)
+				self.protectedWidgets.append(switch)
 				label = Gtk.Label(label = data['title'], xalign = 0)
 
 				if not prepre:
@@ -427,18 +467,26 @@ class LittleServerExecuterApp(Gtk.Application):
 
 
 	def workWithService(self, switch, data):
-		for (group, datag) in self.services.items():
-			for (service, data) in datag.items():
-				if data['switch'] is switch:
-					data["spinner"].start()
-					data['lastactiontime'] = datetime.datetime.now()
-					last = data["lastactiontime"]
+		if not self.switchesServiceLock:
+			for (group, datag) in self.services.items():
+				for (service, data) in datag.items():
+					if data['switch'] is switch:
+						data["spinner"].start()
+						data['lastactiontime'] = datetime.datetime.now()
+						last = data["lastactiontime"]
 
-					prevState = switch.get_active()
-					if prevState:
-						self.startService(service, data)
-					else:
-						self.stopService(service, data)
+						prevState = switch.get_active()
+						if prevState:
+							print("Systemd Start executed [%s]" % service)
+							self.systemd.startService(service)
+						else:
+							print("Systemd Stop executed [%s]" % service)
+							self.systemd.stopService(service)
+
+	def preservedSwitch(self, switcher, state):
+		self.switchesServiceLock = True
+		switcher.set_state(state)
+		self.switchesServiceLock = False
 
 	def systemdJobRemoved(self, arg1, path, service, status):
 		for (group, datag) in self.services.items():
@@ -451,11 +499,10 @@ class LittleServerExecuterApp(Gtk.Application):
 							'ActiveState',
 							dbus_interface='org.freedesktop.DBus.Properties')
 						if (res == 'active'):
-							print("Service %s is started" % service)
-							data['switch'].set_state(True)
+							self.preservedSwitch(data['switch'], True)
 						else:
-							print("Service %s is stopd" % service)
-							data['switch'].set_state(False)
+							self.preservedSwitch(data['switch'], False)
+
 
 	def updateDecorations(self, settings, pspec):
 		layout_desc = settings.props.gtk_decoration_layout
@@ -470,7 +517,6 @@ class LittleServerExecuterApp(Gtk.Application):
 	def appAbout(self, action, parameter):
 		""" Gtk AboutWindow Object """
 		aboutDialog = self.builder.get_object("LseAboutDialog")
-		#aboutDialog.set_transient_for(self.window)
 		aboutDialog.set_title("About " + self.name)
 		aboutDialog.set_program_name(self.name)
 		aboutDialog.set_version(self.version)
@@ -478,13 +524,11 @@ class LittleServerExecuterApp(Gtk.Application):
 		aboutDialog.hide()
 
 	def appExit(self, parameter, act = None):
-		print("Exit")
 		self.quit()
 
 
 	def appSettings(self, parameter, act = None):
 		settingsDialog = self.builder.get_object("LseSettingsDialog")
-		#settingsDialog.set_transient_for(self.window)
 		response = settingsDialog.run()
 		if response == -5:
 			print("Save me [not implemented yet]")
@@ -492,9 +536,21 @@ class LittleServerExecuterApp(Gtk.Application):
 			print("Cancel me [not implemented yet]")
 		settingsDialog.hide()
 
+	def attachActions(self):
+		aboutAction = Gio.SimpleAction.new("about", None)
+		aboutAction.connect("activate", self.appAbout)
+		self.add_action(aboutAction)
+
+		quitAction = Gio.SimpleAction.new("quit", None)
+		quitAction.connect("activate", self.appExit)
+		self.add_action(quitAction)
+
+		settingsAction = Gio.SimpleAction.new("settings", None)
+		settingsAction.connect("activate", self.appSettings)
+		#self.add_action(settingsAction)
+
 
 if __name__ == '__main__':
 	app = LittleServerExecuterApp()
-	app.manager = Interface(systemd, dbus_interface = 'org.freedesktop.systemd1.Manager')
 	exit_status = app.run(sys.argv)
 	sys.exit(exit_status)
