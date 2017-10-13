@@ -10,7 +10,7 @@
     <property name="icon">drawing_LSE_logo.png</property>
     <property name="startup_id">org.pandahugmonster.lse</property>
     <property name="show_menubar">False</property>
-    <signal name="destroy" handler="appExit" swapped="no"/>
+    <signal name="destroy" handler="app_exit" swapped="no"/>
     <child>
       <placeholder/>
     </child>

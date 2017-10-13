@@ -1,6 +1,7 @@
 {
 	"app": {
-		"pidfile": "/tmp/pndcc.pid"
+		"pidfile": "/tmp/pndcc.pid",
+		"version": "0.4.4"
 	},
 	"services": {
 		"Devices": {
