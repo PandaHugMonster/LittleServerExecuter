@@ -5,7 +5,6 @@
 import datetime
 import platform
 import socket
-
 from pathlib import Path
 
 from Lse.models import AbstractMachine
@@ -59,7 +58,6 @@ class LocalMachine(AbstractMachine):
         else:
             res = "LSB File is not found: \"%s\"" % lsb_path
 
-
         return res
 
     @property
@@ -69,6 +67,11 @@ class LocalMachine(AbstractMachine):
     @property
     def distribId(self):
         return self._getvaluefromlsb("DISTRIB_ID")
+
+    @property
+    def logoPath(self):
+        path = '' #machine = LocalMachine()
+        return path
 
     def __str__(self):
         substr = ""

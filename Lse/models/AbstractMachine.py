@@ -9,6 +9,9 @@ from abc import ABCMeta, abstractmethod
 class AbstractMachine:
     __metaclass__ = ABCMeta
 
+    """ Settings file """
+    settingsFile = "settings.json"
+
     def __init__(self):
         pass
 
@@ -55,4 +58,9 @@ class AbstractMachine:
     @property
     @abstractmethod
     def distribId(self):
+        """ Distrib ID """
+
+    @property
+    @abstractmethod
+    def logoPath(self):
         """ Distrib ID """
