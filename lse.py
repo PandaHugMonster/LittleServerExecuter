@@ -6,12 +6,12 @@
 import datetime
 import json
 import os
-import sys
 
 import gi
 from dbus.mainloop.glib import DBusGMainLoop
 
 from Lse import DBus, Page, Systemd, PolkitAuth
+from Lse.models import LocalMachine
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
@@ -546,6 +546,9 @@ class LittleServerExecuterApp(Gtk.Application):
 
 
 if __name__ == '__main__':
-    app = LittleServerExecuterApp()
-    exit_status = app.run(sys.argv)
-    sys.exit(exit_status)
+    machine = LocalMachine()
+
+    print(machine)
+    # app = LittleServerExecuterApp()
+    # exit_status = app.run(sys.argv)
+    # sys.exit(exit_status)
