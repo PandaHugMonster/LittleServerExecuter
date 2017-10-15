@@ -73,6 +73,10 @@ class LocalMachine(AbstractMachine):
     def logo_path(self):
         return FileAccessHelper.get_logo(self.distrib_id)
 
+    @property
+    def settings_path(self):
+        return FileAccessHelper.get_settings_path()
+
     def __str__(self):
         substr = ""
         substr += "Hostname:\t\t" + self.hostname + "\n"
@@ -82,6 +86,7 @@ class LocalMachine(AbstractMachine):
         substr += "Architecture:\t" + self.architecture + "\n"
         substr += "Platform:\t\t" + self.platform + "\n"
         substr += "DateTime:\t\t" + str(self.datetime) + "\n"
+        substr += "Settings:\t\t" + self.settings_path + "\n"
         substr += "Logo:\t\t\t" + self.logo_path + "\n"
         return substr
 

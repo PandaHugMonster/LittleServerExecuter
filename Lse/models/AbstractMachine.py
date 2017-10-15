@@ -66,4 +66,9 @@ class AbstractMachine:
     @property
     @abstractmethod
     def logo_path(self):
-        """ Distrib ID """
+        """ Logo Path """
+
+    @property
+    @abstractmethod
+    def settings_path(self):
+        """ Settings Path """

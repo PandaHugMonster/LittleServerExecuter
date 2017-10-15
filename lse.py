@@ -6,6 +6,7 @@
 import datetime
 import json
 import os
+import sys
 
 import gi
 from dbus.mainloop.glib import DBusGMainLoop
@@ -17,8 +18,6 @@ from Lse.models import LocalMachine
 gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, Gio, Gdk, Notify
-from pathlib import Path
-
 
 DBusGMainLoop(set_as_default=True)
 
@@ -66,9 +65,12 @@ class LittleServerExecuterApp(Gtk.Application):
 
     switchesServiceLock = False
 
-    """ Constructor """
+    machine = None
 
-    def __init__(self):
+    """ Constructor """
+    def __init__(self, machine=None):
+        self.machine = machine if machine else LocalMachine()
+
         self.pid = str(os.getpid())
         Gtk.Application.__init__(self, application_id=self.appId)
         Notify.init(self.pid)
@@ -80,7 +82,7 @@ class LittleServerExecuterApp(Gtk.Application):
         self.systemd = Systemd(self.dbus, self.polkitHelper)
 
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(FileAccessHelper.get_ui("face"))
+        self.builder.add_from_file(FileAccessHelper.get_ui("face.ui"))
 
         self.header = Gtk.Box()
         self.pages = {}
@@ -190,7 +192,7 @@ class LittleServerExecuterApp(Gtk.Application):
     @staticmethod
     def load_css():
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_path(os.path.join(currentDirectory, "ui/application.css"))
+        css_provider.load_from_path(FileAccessHelper.get_ui("application.css"))
         screen = Gdk.Screen.get_default()
         context = Gtk.StyleContext()
         context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
@@ -339,6 +341,10 @@ class LittleServerExecuterApp(Gtk.Application):
 
         self.pages[named] = page
 
+        named = "info"
+        page = Page(name=named, content=Gtk.Notebook.new(), title="Info")
+        self.pages[named] = page
+
     # /usr/lib/php/modules/
 
     def recompose_ui(self, name):
@@ -372,12 +378,7 @@ class LittleServerExecuterApp(Gtk.Application):
     """ Get settings """
 
     def get_settings_data(self):
-        sub_path = os.path.join(Path.home(), ".lse/" + self.settingsFile)
-
-        if not os.path.isfile(sub_path):
-            sub_path = os.path.join(currentDirectory, "/etc/lse/" + self.settingsFile)
-            if not os.path.isfile(sub_path):
-                sub_path = os.path.join(currentDirectory, "extras/" + self.settingsFile)
+        sub_path = self.machine.settings_path
 
         print("Settings loaded from: " + sub_path)
 
@@ -542,8 +543,6 @@ class LittleServerExecuterApp(Gtk.Application):
 
 
 if __name__ == '__main__':
-    machine = LocalMachine()
-    print(machine)
-    # app = LittleServerExecuterApp()
-    # exit_status = app.run(sys.argv)
-    # sys.exit(exit_status)
+    app = LittleServerExecuterApp()
+    exit_status = app.run(sys.argv)
+    sys.exit(exit_status)
