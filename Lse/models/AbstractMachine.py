@@ -4,16 +4,19 @@
 # Version: 0.4
 
 from abc import ABCMeta, abstractmethod
+from pathlib import Path
 
 
 class AbstractMachine:
     __metaclass__ = ABCMeta
 
     """ Settings file """
-    settingsFile = "settings.json"
+    settingsFile = None
 
-    def __init__(self):
-        pass
+    def __init__(self, settings_file=None):
+        if settings_file and Path(settings_file).is_file():
+            self.settingsFile = settings_file
+
 
     @property
     @abstractmethod
@@ -52,15 +55,15 @@ class AbstractMachine:
 
     @property
     @abstractmethod
-    def distribName(self):
+    def distrib_name(self):
         """ Distrib Name """
 
     @property
     @abstractmethod
-    def distribId(self):
+    def distrib_id(self):
         """ Distrib ID """
 
     @property
     @abstractmethod
-    def logoPath(self):
+    def logo_path(self):
         """ Distrib ID """

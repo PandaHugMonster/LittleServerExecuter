@@ -7,6 +7,7 @@ import platform
 import socket
 from pathlib import Path
 
+from Lse.helpers import FileAccessHelper
 from Lse.models import AbstractMachine
 
 
@@ -61,26 +62,26 @@ class LocalMachine(AbstractMachine):
         return res
 
     @property
-    def distribName(self):
+    def distrib_name(self):
         return self._getvaluefromlsb("DISTRIB_DESCRIPTION")
 
     @property
-    def distribId(self):
+    def distrib_id(self):
         return self._getvaluefromlsb("DISTRIB_ID")
 
     @property
-    def logoPath(self):
-        path = '' #machine = LocalMachine()
-        return path
+    def logo_path(self):
+        return FileAccessHelper.get_logo(self.distrib_id)
 
     def __str__(self):
         substr = ""
         substr += "Hostname:\t\t" + self.hostname + "\n"
-        substr += "OS:\t\t\t\t" + self.os + " (" + self.distribId + ")" + "\n"
-        substr += "Distrib name:\t" + self.distribName + "\n"
+        substr += "OS:\t\t\t\t" + self.os + " (" + self.distrib_id + ")" + "\n"
+        substr += "Distrib name:\t" + self.distrib_name + "\n"
         substr += "Version:\t\t" + self.version + "\n"
         substr += "Architecture:\t" + self.architecture + "\n"
         substr += "Platform:\t\t" + self.platform + "\n"
         substr += "DateTime:\t\t" + str(self.datetime) + "\n"
+        substr += "Logo:\t\t\t" + self.logo_path + "\n"
         return substr
 

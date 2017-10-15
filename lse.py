@@ -6,12 +6,12 @@
 import datetime
 import json
 import os
-import sys
 
 import gi
 from dbus.mainloop.glib import DBusGMainLoop
 
 from Lse import DBus, Page, Systemd, PolkitAuth
+from Lse.models import LocalMachine
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
@@ -21,7 +21,7 @@ from pathlib import Path
 
 DBusGMainLoop(set_as_default=True)
 
-currentDirectory = os.path.dirname(os.path.abspath(__file__))
+currentDirectory=None
 
 
 class LittleServerExecuterApp(Gtk.Application):
@@ -543,6 +543,8 @@ class LittleServerExecuterApp(Gtk.Application):
 
 
 if __name__ == '__main__':
-    app = LittleServerExecuterApp()
-    exit_status = app.run(sys.argv)
-    sys.exit(exit_status)
+    machine = LocalMachine()
+    print(machine)
+    # app = LittleServerExecuterApp()
+    # exit_status = app.run(sys.argv)
+    # sys.exit(exit_status)
