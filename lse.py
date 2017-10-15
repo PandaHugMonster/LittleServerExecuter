@@ -6,7 +6,6 @@ import sys
 
 from Lse import LseApp
 
-
 app = LseApp()
 exit_status = app.run(sys.argv)
 sys.exit(exit_status)

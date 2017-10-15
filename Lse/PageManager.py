@@ -3,7 +3,8 @@
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
 from gi.repository import Gtk
-from Lse import AbstractPage, LseApp
+
+from Lse import AbstractPage
 from Lse.models import AbstractMachine
 
 
@@ -16,8 +17,8 @@ class PageManager:
     _name_index = {}
     _pages = []
 
-    def __init__(self, app: LseApp, machine: AbstractMachine):
-        self._app = app
+    def __init__(self, machine: AbstractMachine):
+        # self._app = app
         self._header = Gtk.HeaderBar.new()
         self._machine = machine
 
@@ -30,7 +31,7 @@ class PageManager:
                 if title == name:
                     return True
 
-        self._pages[size] = page
+        self._pages.insert(size, page)
         self._name_index[title] = size
         page.page_manager = self
 

@@ -3,7 +3,8 @@
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
 from gi.repository import Gtk
-from Lse import AbstractPage
+
+from Lse.AbstractPage import AbstractPage
 
 
 class PageInfo(AbstractPage):
@@ -14,5 +15,5 @@ class PageInfo(AbstractPage):
         super().__init__()
 
     @property
-    def prepare_content(self) -> Gtk.Container:
+    def prepare_content(self):
         return Gtk.Notebook.new()

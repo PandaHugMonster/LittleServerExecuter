@@ -4,7 +4,7 @@
 # Version: 0.4
 from abc import ABCMeta, abstractmethod
 
-from gi.overrides import Gtk
+from gi.repository import Gtk
 
 from Lse import PageManager
 
@@ -16,12 +16,9 @@ class AbstractPage:
     _content = None
     _page_manager = None
 
-    def __init__(self):
-        pass
-
     @property
     def page_manager(self) -> PageManager:
-        return self._content
+        return self._page_manager
 
     @page_manager.setter
     def page_manager(self, val: PageManager):
@@ -39,5 +36,5 @@ class AbstractPage:
         pass
 
     @property
-    def title(self) -> str:
+    def title(self):
         return self._title
