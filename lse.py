@@ -11,17 +11,16 @@ import gi
 from dbus.mainloop.glib import DBusGMainLoop
 
 from Lse import DBus, Page, Systemd, PolkitAuth
+from Lse.helpers import FileAccessHelper
 from Lse.models import LocalMachine
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, Gio, Gdk, Notify
-
 from pathlib import Path
 
-DBusGMainLoop(set_as_default=True)
 
-currentDirectory=None
+DBusGMainLoop(set_as_default=True)
 
 
 class LittleServerExecuterApp(Gtk.Application):
@@ -81,7 +80,7 @@ class LittleServerExecuterApp(Gtk.Application):
         self.systemd = Systemd(self.dbus, self.polkitHelper)
 
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(os.path.join(currentDirectory, 'ui/face.ui'))
+        self.builder.add_from_file(FileAccessHelper.get_ui("face"))
 
         self.header = Gtk.Box()
         self.pages = {}

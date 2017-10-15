@@ -26,3 +26,7 @@ class FileAccessHelper:
     @staticmethod
     def get_image(subpath):
         return os.path.abspath(FileAccessHelper.work_directory() + "/" + subpath)
+
+    @staticmethod
+    def get_ui(name):
+        return os.path.abspath(FileAccessHelper.work_directory() + "/ui/" + name + ".ui")
