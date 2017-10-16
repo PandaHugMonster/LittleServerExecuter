@@ -3,7 +3,6 @@
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
 
-import json
 import os
 
 import gi
@@ -15,7 +14,7 @@ from Lse.PolkitAuth import PolkitAuth
 from Lse.Systemd import Systemd
 from Lse.helpers import FileAccessHelper
 from Lse.models import LocalMachine
-from Lse.pages import PageInfo
+from Lse.pages import PageInfo, PageSystemd
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
@@ -35,12 +34,6 @@ class LseApp(Gtk.Application):
 
     """ Application Pid Number """
     pid = None
-    """ List of switchers """
-    switchers = None
-    """ List of services through dbus """
-    services = {}
-    """ Settings """
-    settings = None
     """ Gtk Window Object """
     window = None
 
@@ -53,7 +46,6 @@ class LseApp(Gtk.Application):
     builder = None
 
     """ Main Grid """
-    grid = None
     stack = None
 
     """ """
@@ -64,28 +56,28 @@ class LseApp(Gtk.Application):
     prevPage = None
 
     polkit_helper = None
-    protectedWidgets = []
+    dbus = None
 
-    switchesServiceLock = False
+    event_granted_callbacks = []
 
     machine = None
     page_manager = None
     header = None
-    dbus = None
-    systemd = None
 
     """ Constructor """
     def __init__(self):
+        self.pid = str(os.getpid())
+
         super().__init__()
-        self.prepare_app_defaults()
         self.prepare_other_libs()
+        self.prepare_app_defaults()
         self.prepare_interface_vars()
 
     def prepare_app_defaults(self):
         # self.machine = machine if machine else LocalMachine()
         self.machine = LocalMachine()
         self.page_manager = PageManager(self.machine, self)
-        self.pid = str(os.getpid())
+        self.page_manager.set_extra_libs(dbus=self.dbus, polkit=self.polkit_helper)
 
     def prepare_other_libs(self):
         Gtk.Application.__init__(self, application_id=self.appId)
@@ -93,7 +85,6 @@ class LseApp(Gtk.Application):
         Gtk.Settings.get_default().connect("notify::gtk_decoration_layout", self.update_decorations)
         self.dbus = DBus()
         self.polkit_helper = PolkitAuth(self.dbus, self.pid)
-        self.systemd = Systemd(self.dbus, self.polkit_helper)
 
     def prepare_interface_vars(self):
         self.header = Gtk.Box()
@@ -105,7 +96,6 @@ class LseApp(Gtk.Application):
         Gtk.Application.do_startup(self)
         self.set_app_menu(self.builder.get_object("appmenu"))
         self.attach_actions()
-        self.systemd.signalReceiver(self.systemd_job_removed)
 
     """ Activation """
     def do_activate(self):
@@ -156,11 +146,10 @@ class LseApp(Gtk.Application):
         self.window.hsize_group.add_widget(self.appHB)
         self.window.set_titlebar(self.header)
 
-        handlers = {"app_exit": self.app_exit}
-        self.builder.connect_signals(handlers)
+        self.builder.connect_signals({"app_exit": self.app_exit})
 
         self.load_css()
-        self.set_settings()
+        # self.set_settings()
 
         self.add_window(self.window)
 
@@ -197,8 +186,8 @@ class LseApp(Gtk.Application):
         self.change_sesitivity_of_protected_widgets(managable)
 
     def change_sesitivity_of_protected_widgets(self, active=False):
-        for widget in self.protectedWidgets:
-            widget.set_sensitive(active)
+        for callback in self.event_granted_callbacks:
+            callback(active)
 
     @staticmethod
     def load_css():
@@ -241,19 +230,14 @@ class LseApp(Gtk.Application):
             self.stack.set_visible_child_name(row.childname)
             self.recompose_ui(row.childname)
 
-    def preapre_pages(self):
-        page = PageInfo()
-        self.page_manager.add_page(page)
+    def attach_permission_callback(self, callback):
+        self.event_granted_callbacks.append(callback)
 
-        # named = "systemd"
-        # self.grid = Gtk.Grid()
-        # self.grid.set_border_width(20)
-        # sw = Gtk.ScrolledWindow()
-        # sw.add(self.grid)
-        #
-        # page = AbstractPage(name=named, content=sw, title="SystemD Control")
-        # self.pages[named] = page
-        #
+    def preapre_pages(self):
+
+        self.page_manager.add_page(PageInfo())
+        self.page_manager.add_page(PageSystemd())
+
         # named = "apache"
         # page = AbstractPage(name=named, content=Gtk.Notebook.new(), title="Apache")
         #
@@ -362,9 +346,7 @@ class LseApp(Gtk.Application):
 
     def recompose_ui(self, name):
         self.update_decorations(Gtk.Settings.get_default(), None)
-
-        # self.partHB.set_title(self.pages[name].title)
-
+        self.partHB.set_title(self.page_manager.get_page(name).title)
         self.window.queue_draw()
 
     def main_content(self):
@@ -374,138 +356,9 @@ class LseApp(Gtk.Application):
             self.stack.add_named(page.content, page.title)
         return self.stack
 
-    # def process_group_services_now(self, action, group_name):
-    #     for (group, gdata) in self.services.items():
-    #         if group == group_name:
-    #             for (service, data) in gdata.items():
-    #                 if data['switch'].get_active() != action:
-    #                     data['switch'].set_active(action)
-
     def non_authorized(self, e):
         notification = Notify.Notification.new(self.name, "You are not authorized to do this", "dialog-error")
         notification.show()
-
-    """ Get settings """
-
-    def get_settings_data(self):
-        sub_path = self.machine.settings_path
-
-        print("Settings loaded from: " + sub_path)
-
-        json_data = open(sub_path)
-        settings = json.load(json_data)
-        json_data.close()
-        return settings
-
-    def set_settings(self):
-        self.settings = self.get_settings_data()
-
-        for (group, datag) in self.settings['services'].items():
-            self.services[group] = {}
-            for (service, title) in datag.items():
-                service_unit = self.systemd.loadUnit(service)
-                service_interface = self.dbus.getObject('org.freedesktop.systemd1', str(service_unit))
-                state = service_interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState',
-                                              dbus_interface='org.freedesktop.DBus.Properties')
-                self.services[group][service] = {
-                    'unit': service_unit,
-                    'interface': service_interface,
-                    'title': title,
-                    'state': state,
-                    'switch': Gtk.Switch(),
-                    'spinner': Gtk.Spinner(),
-                }
-            # print("%s = %s | %s" % (service, title, state))
-
-        # self.build_table()
-
-    """ Generating the table of services from the config """
-
-    # def build_table(self):
-    #     self.grid.set_row_spacing(15)
-    #     self.grid.set_column_spacing(20)
-    #     self.grid.get_style_context().add_class("lse-grid")
-    #     prev = None
-    #     keys = list(sorted(self.services.keys()))
-    #     for group in keys:
-    #         datag = self.services[group]
-    #
-    #         group_name = Gtk.Label(label=group)
-    #         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-    #
-    #         # if self.uid == 0:
-    #         stop_all_button = Gtk.Button.new_from_icon_name("media-playback-stop", Gtk.IconSize.BUTTON)
-    #         start_all_button = Gtk.Button.new_from_icon_name("media-playback-start", Gtk.IconSize.BUTTON)
-    #         start_all_button.group = group
-    #         stop_all_button.group = group
-    #
-    #         start_all_button.connect("clicked", lambda widget: self.process_group_services_now(True, widget.group))
-    #         stop_all_button.connect("clicked", lambda widget: self.process_group_services_now(False, widget.group))
-    #
-    #         self.protectedWidgets.append(start_all_button)
-    #         self.protectedWidgets.append(stop_all_button)
-    #
-    #         box.add(start_all_button)
-    #         box.add(stop_all_button)
-    #
-    #         if not prev:
-    #             self.grid.add(group_name)
-    #         else:
-    #             self.grid.attach_next_to(group_name, prev, Gtk.PositionType.BOTTOM, 1, 1)
-    #         self.grid.attach_next_to(box, group_name, Gtk.PositionType.RIGHT, 1, 1)
-    #         prepre = None
-    #         for (service, data) in datag.items():
-    #             switch = data['switch']
-    #             spinner = data['spinner']
-    #             switch.set_active(data['state'] == 'active')
-    #             switch.connect("notify::active", self.work_with_service)
-    #             self.protectedWidgets.append(switch)
-    #             label = Gtk.Label(label=data['title'], xalign=0)
-    #
-    #             if not prepre:
-    #                 prepre = True
-    #                 self.grid.attach_next_to(switch, group_name, Gtk.PositionType.BOTTOM, 1, 1)
-    #             else:
-    #                 self.grid.attach_next_to(switch, prev, Gtk.PositionType.BOTTOM, 1, 1)
-    #             self.grid.attach_next_to(label, switch, Gtk.PositionType.RIGHT, 1, 1)
-    #             self.grid.attach_next_to(spinner, label, Gtk.PositionType.RIGHT, 1, 1)
-    #             prev = switch
-    #
-    # def work_with_service(self, switch, data):
-    #     if not self.switchesServiceLock:
-    #         for (group, datag) in self.services.items():
-    #             for (service, data) in datag.items():
-    #                 if data['switch'] is switch:
-    #                     data["spinner"].start()
-    #                     data['lastactiontime'] = datetime.datetime.now()
-    #                     last = data["lastactiontime"]
-    #
-    #                     prev_state = switch.get_active()
-    #                     if prev_state:
-    #                         print("Systemd Start executed [%s]" % service)
-    #                         self.systemd.startService(service)
-    #                     else:
-    #                         print("Systemd Stop executed [%s]" % service)
-    #                         self.systemd.stopService(service)
-    #
-    # def preserved_switch(self, switcher, state):
-    #     self.switchesServiceLock = True
-    #     switcher.set_state(state)
-    #     self.switchesServiceLock = False
-    #
-    def systemd_job_removed(self, arg1, path, service, status):
-        for (group, datag) in self.services.items():
-            for (servicein, data) in datag.items():
-                spinner = data["spinner"]
-                if servicein == service:
-                    if status == 'done':
-                        spinner.stop()
-                        res = data['interface'].Get('org.freedesktop.systemd1.Unit', 'ActiveState',
-                                                    dbus_interface='org.freedesktop.DBus.Properties')
-                        if res == 'active':
-                            self.preserved_switch(data['switch'], True)
-                        else:
-                            self.preserved_switch(data['switch'], False)
 
     def update_decorations(self, settings, pspec):
         layout_desc = settings.props.gtk_decoration_layout

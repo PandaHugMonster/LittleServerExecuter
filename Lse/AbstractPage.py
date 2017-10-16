@@ -16,9 +16,15 @@ from gi.repository import Gtk
 class AbstractPage:
     __metaclass__ = ABCMeta
 
+    _name = None
     _title = None
     _content = None
     _page_manager = None
+    _is_permission_needed = False
+
+    def __init__(self, name, title):
+        self._name = name
+        self._title = title
 
     @property
     def page_manager(self) -> PageManager:
@@ -42,3 +48,20 @@ class AbstractPage:
     @property
     def title(self):
         return self._title
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def is_permission_needed(self):
+        return self._is_permission_needed
+
+    def permission_granted_callback(self, status:bool):
+        pass
+
+    def attach_init(self, page_manager:PageManager):
+        self.page_manager = page_manager
+
+        if self.is_permission_needed:
+            page_manager.attach_permission_callback(self.permission_granted_callback)

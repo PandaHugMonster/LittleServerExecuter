@@ -75,5 +75,14 @@ class AbstractMachine:
 
     @property
     @abstractmethod
+    def settings(self):
+        """ Settings """
+
+    @settings.setter
+    def settings(self, value):
+        """ Settings """
+
+    @property
+    @abstractmethod
     def type(self):
         """ Machine Type """

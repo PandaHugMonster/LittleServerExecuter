@@ -5,6 +5,8 @@
 import datetime
 import platform
 import socket
+import json
+
 from pathlib import Path
 
 from Lse.helpers import FileAccessHelper
@@ -80,6 +82,22 @@ class LocalMachine(AbstractMachine):
     @property
     def settings_path(self):
         return FileAccessHelper.get_settings_path()
+
+    _settings = None
+
+    @property
+    def settings(self):
+        if not self._settings:
+            print("Settings loaded from: " + self.settings_path)
+            json_data = open(self.settings_path)
+            self._settings = json.load(json_data)
+            json_data.close()
+
+        return self._settings
+
+    @settings.setter
+    def settings(self, value):
+        pass
 
     def __str__(self):
         substr = ""

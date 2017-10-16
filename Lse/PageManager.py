@@ -4,7 +4,8 @@
 # Version: 0.4
 import gi
 
-from Lse import AbstractPage
+from Lse import AbstractPage, PolkitAuth
+from Lse.DBus import DBus
 from Lse.models import AbstractMachine
 
 gi.require_version('Gtk', '3.0')
@@ -18,6 +19,9 @@ class PageManager:
     _header = None
     _machine = None
 
+    _polkit_helper = None
+    _dbus = None
+
     _name_index = {}
     _pages = []
 
@@ -25,6 +29,18 @@ class PageManager:
         self._app = app
         self._header = Gtk.HeaderBar.new()
         self._machine = machine
+
+    @property
+    def dbus(self):
+        return self._dbus
+
+    @property
+    def polkit_helper(self):
+        return self._polkit_helper
+
+    def set_extra_libs(self, dbus:DBus, polkit:PolkitAuth):
+        self._dbus = dbus
+        self._polkit_helper = polkit
 
     def add_page(self, page: AbstractPage) -> bool:
         size = len(self._pages)
@@ -37,7 +53,7 @@ class PageManager:
 
         self._pages.insert(size, page)
         self._name_index[title] = size
-        page.page_manager = self
+        page.attach_init(self)
 
         return True
 
@@ -60,3 +76,6 @@ class PageManager:
     @property
     def builder(self) -> Gtk.Builder:
         return self._app.builder
+
+    def attach_permission_callback(self, callback):
+        self._app.attach_permission_callback(callback)

@@ -9,10 +9,10 @@ from Lse.AbstractPage import AbstractPage
 
 class PageInfo(AbstractPage):
 
-    _title = "Machine Info"
-
     def __init__(self):
-        super().__init__()
+        name = "page_info"
+        title = "Machine Info"
+        super().__init__(name, title)
 
     @property
     def get_main_container(self) -> Gtk.Box:
@@ -21,6 +21,12 @@ class PageInfo(AbstractPage):
     @property
     def get_logo_place(self) -> Gtk.Image:
         return self.page_manager.builder.get_object("OSLogo")
+
+    @property
+    def prepare_content(self):
+        box = self.get_main_container
+        self.set_defaults(box)
+        return box
 
     def set_defaults(self, box: Gtk.Box):
         machine = self.page_manager.machine
@@ -33,9 +39,3 @@ class PageInfo(AbstractPage):
         self.page_manager.builder.get_object("place_platform").set_text(machine.platform)
         self.page_manager.builder.get_object("place_kernel").set_text(machine.version)
         self.page_manager.builder.get_object("place_date").set_text(str(machine.datetime))
-
-    @property
-    def prepare_content(self):
-        box = self.get_main_container
-        self.set_defaults(box)
-        return box
