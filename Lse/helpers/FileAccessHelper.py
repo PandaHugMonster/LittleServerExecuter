@@ -18,12 +18,12 @@ class FileAccessHelper:
         return _work_directory
 
     @staticmethod
-    def get_logo(alias="empty"):
+    def get_logo(alias="empty", subtype="distrib-logo"):
         alias = alias.lower()
         if alias == "empty":
             path = FileAccessHelper.get_image("ui/images/empty.svg")
         else:
-            path = FileAccessHelper.get_image("ui/images/logos/" + alias + ".svg")
+            path = FileAccessHelper.get_image("ui/images/logos/" + subtype + "-" + alias + ".svg")
         return path
 
     @staticmethod

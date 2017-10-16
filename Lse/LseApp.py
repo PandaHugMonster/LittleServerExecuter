@@ -84,7 +84,7 @@ class LseApp(Gtk.Application):
     def prepare_app_defaults(self):
         # self.machine = machine if machine else LocalMachine()
         self.machine = LocalMachine()
-        self.page_manager = PageManager(self.machine)
+        self.page_manager = PageManager(self.machine, self)
         self.pid = str(os.getpid())
 
     def prepare_other_libs(self):
@@ -493,19 +493,19 @@ class LseApp(Gtk.Application):
     #     switcher.set_state(state)
     #     self.switchesServiceLock = False
     #
-    # def systemd_job_removed(self, arg1, path, service, status):
-    #     for (group, datag) in self.services.items():
-    #         for (servicein, data) in datag.items():
-    #             spinner = data["spinner"]
-    #             if servicein == service:
-    #                 if status == 'done':
-    #                     spinner.stop()
-    #                     res = data['interface'].Get('org.freedesktop.systemd1.Unit', 'ActiveState',
-    #                                                 dbus_interface='org.freedesktop.DBus.Properties')
-    #                     if res == 'active':
-    #                         self.preserved_switch(data['switch'], True)
-    #                     else:
-    #                         self.preserved_switch(data['switch'], False)
+    def systemd_job_removed(self, arg1, path, service, status):
+        for (group, datag) in self.services.items():
+            for (servicein, data) in datag.items():
+                spinner = data["spinner"]
+                if servicein == service:
+                    if status == 'done':
+                        spinner.stop()
+                        res = data['interface'].Get('org.freedesktop.systemd1.Unit', 'ActiveState',
+                                                    dbus_interface='org.freedesktop.DBus.Properties')
+                        if res == 'active':
+                            self.preserved_switch(data['switch'], True)
+                        else:
+                            self.preserved_switch(data['switch'], False)
 
     def update_decorations(self, settings, pspec):
         layout_desc = settings.props.gtk_decoration_layout

@@ -72,3 +72,8 @@ class AbstractMachine:
     @abstractmethod
     def settings_path(self):
         """ Settings Path """
+
+    @property
+    @abstractmethod
+    def type(self):
+        """ Machine Type """

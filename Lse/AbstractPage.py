@@ -4,9 +4,13 @@
 # Version: 0.4
 from abc import ABCMeta, abstractmethod
 
-from gi.repository import Gtk
+import gi
 
 from Lse import PageManager
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('Notify', '0.7')
+from gi.repository import Gtk
 
 
 class AbstractPage:

@@ -13,6 +13,10 @@ from Lse.models import AbstractMachine
 
 class LocalMachine(AbstractMachine):
 
+    @property
+    def type(self):
+        return "Local"
+
     def __init__(self):
         super().__init__()
 
