@@ -1,0 +1,4 @@
+alias pygettext=/usr/lib/python3.6/Tools/i18n/pygettext.py
+pygettext -a -d application -p ./locale/ ./Lse/LseApp.py
+msgfmt --output-file=./locale/ru/LC_MESSAGES/application.mo  ./locale/ru/application.po
+
