@@ -41,8 +41,17 @@ class AbstractPage:
         return self._content
 
     @property
-    @abstractmethod
     def prepare_content(self) -> Gtk.Container:
+        box = self.get_main_container
+        self.set_defaults(box)
+        return box
+
+    @property
+    @abstractmethod
+    def get_main_container(self) -> Gtk.Box:
+        pass
+
+    def set_defaults(self, box: Gtk.Box):
         pass
 
     @property

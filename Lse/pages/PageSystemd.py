@@ -6,9 +6,9 @@ import datetime
 
 from gi.repository import Gtk
 
+from Lse.AbstractPage import AbstractPage
 from Lse.PageManager import PageManager
 from Lse.Systemd import Systemd
-from Lse.AbstractPage import AbstractPage
 
 
 class PageSystemd(AbstractPage):
@@ -39,12 +39,6 @@ class PageSystemd(AbstractPage):
         sw = Gtk.ScrolledWindow()
         sw.add(self.grid)
         return sw
-
-    @property
-    def prepare_content(self):
-        box = self.get_main_container
-        self.set_defaults(box)
-        return box
 
     def set_defaults(self, box: Gtk.Box):
         self.grid.set_border_width(20)
@@ -77,7 +71,6 @@ class PageSystemd(AbstractPage):
     def get_services_completed(self):
         if not self._services_completed:
             self._services_completed = self.prepare_services()
-
         return self._services_completed
 
     def build_table(self):

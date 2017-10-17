@@ -307,8 +307,8 @@
   <object class="GtkApplicationWindow" id="LseWindow">
     <property name="can_focus">False</property>
     <property name="window_position">center</property>
-    <property name="default_width">950</property>
-    <property name="default_height">700</property>
+      <property name="default_width">720</property>
+      <property name="default_height">460</property>
     <property name="icon">drawing_LSE_logo.png</property>
     <property name="startup_id">org.pandahugmonster.lse</property>
     <property name="show_menubar">False</property>

@@ -22,15 +22,8 @@ class PageInfo(AbstractPage):
     def get_logo_place(self) -> Gtk.Image:
         return self.page_manager.builder.get_object("OSLogo")
 
-    @property
-    def prepare_content(self):
-        box = self.get_main_container
-        self.set_defaults(box)
-        return box
-
     def set_defaults(self, box: Gtk.Box):
         machine = self.page_manager.machine
-        print(machine)
         self.get_logo_place.set_from_file(machine.logo_path)
         self.page_manager.builder.get_object("place_machine_type").set_text(machine.type)
         self.page_manager.builder.get_object("place_hostname").set_text(machine.hostname)
