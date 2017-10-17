@@ -3,11 +3,17 @@ LSE is the simplest python app that helps instantly run systemd services
 (like apache, mysql, postgresql, nginx, php-fpm and etc.)
 ! You can configure which services you need to control with the settings.json
 
-![alt tag](https://github.com/PandaHugMonster/LittleServerExecuter/blob/develop/picture_preview_v0.4.4.png)
+#### Huge Code Changes
 
-#### Big changes
+##### Version 0.5.0 (current)
+ * **Fully refactored structure of the code**
+ * Partly optimized
+ * Prepared for future connections to remote servers (Multiple servers control as local, as remote)
+ * LSB package (/etc/lsb-release file actually) is recommended for some basic system data identifying
+ * ** IMPORTANT: ** Right now only Local Machines (local-connections) are supported, so no remote control in that version.
+ * ** IMPORTANT: ** Distibutives Logo right now are not fully adjusted, so logo can be missed without LSB and so on
 
-##### Version 0.4.4 (current)
+##### Version 0.4.4 (previous)
  * Added spinners for longtime-startup-services (Glassfish for example)
  * Added service glassfish to list of services
  * Rewritten authorization model (Now no need to be root for running script to manage services, PolKit used to authorize)
@@ -16,23 +22,33 @@ LSE is the simplest python app that helps instantly run systemd services
  * Removed warning: "Gtk-WARNING **: Overriding tab label for notebook"
  * Added PHP modules and php.ini observers
 
-##### Version 0.4.3 (previous)
- * List of apache's modules
- * View of Apache httpd.conf config
- * View of Mysql my.cnf config
- * Updated some code
- * Updated some UI elements
-
 
 #### Notes
+Code is under heavy refactoring and restructuring. Really soon new features will come.
 
-1. Little Server Executer is going to be the part
-of a new system called Panda's Control Centre
-2. This project does not contain the best style of development-code - this is related
-to the really important moment: This project is my GTK+Python3 experiment, so later
-code will be in a better shape. Arguing about that my absolutely unlogical code -
-will be deleted - because I'm well informed about this problem, and it exists only
-because of experimenting, and doesn't reflect my tallents. Thank you for your understanding
+#### Future-Features
+ * Mutiple servers (Multiple Connections)
+ * Cluster-control of multiple servers
+ * Server-side application (the point to connect to)
+ * Basic configs parsing/applying support (Parsing such configs as Apache, php.ini or MySQL my.cnf settings)
+ * Connection-based filesystem monitoring/observing
+ * Connection-based Update-Manager support
+ * Connection-based settings
+ * Connection-based notes
+ * Future distribution through: DEB, RPM, Arch Packages (maybe other systems like flatpak and so on)
+ * Gnome Shell Widget
+
+#### Deep Future-Features
+ * Export/Import of configs and settings
+ * Connection-based (Cluster-based) script-instructions applying
+ * Connection-based user control
+ * Server's user control
+ * Server-Documentation feature
+ * Backing-Up Infrastructure
+ * Ticketing (maybe)
+ * Connection-based SSH-interface (But I'm not sure yet)
+ * Connection-based (Cluster-based) file sharing
+
 
 #### Settings Example
 ```json
