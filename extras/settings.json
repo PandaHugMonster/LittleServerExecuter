@@ -1,6 +1,7 @@
 {
 	"app": {
-		"pidfile": "/tmp/pndcc.pid"
+		"pidfile": "/tmp/pndcc.pid",
+      "version": "0.5.0"
 	},
 	"services": {
 		"Devices": {
@@ -14,10 +15,10 @@
 		},
 		"Web Group": {
 			"httpd.service": "Apache server",
-			"mysqld.service": "Mysql Database"
+          "mariadb.service": "MySQL Database"
 		},
 		"Databases": {
-			"mysqld.service": "Mysql Database"
+          "mariadb.service": "MySQL Database"
 		},
 		"Other": {
 			"upower.service": "Daemon for power management",
