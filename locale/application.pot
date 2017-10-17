@@ -1,0 +1,37 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2017-10-18 00:52+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: ./Lse/LseApp.py:47
+msgid "Little Server Executer"
+msgstr ""
+
+#: ./Lse/LseApp.py:94 ./Lse/LseApp.py:154
+msgid "Locked"
+msgstr ""
+
+#: ./Lse/LseApp.py:151
+msgid "Unlocked"
+msgstr ""
+
+#: ./Lse/LseApp.py:190
+msgid "You are not authorized to do this"
+msgstr ""
+
+#: ./Lse/LseApp.py:195
+msgid "About "
+msgstr ""
+

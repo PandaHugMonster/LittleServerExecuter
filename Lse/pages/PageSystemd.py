@@ -3,12 +3,19 @@
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
 import datetime
+import gettext
+import os
 
 from gi.repository import Gtk
 
 from Lse.AbstractPage import AbstractPage
 from Lse.PageManager import PageManager
 from Lse.Systemd import Systemd
+from Lse.helpers import FileAccessHelper
+
+localedir = os.path.join(FileAccessHelper.work_directory(), 'locale')
+translate = gettext.translation("pages", localedir)
+_ = translate.gettext
 
 
 class PageSystemd(AbstractPage):
@@ -19,15 +26,15 @@ class PageSystemd(AbstractPage):
     systemd = None
     _services_completed = None
 
+    def __init__(self):
+        name = "page_systemd"
+        title = _("SystemD Control")
+        super().__init__(name, title)
+
     def attach_init(self, page_manager:PageManager):
         super().attach_init(page_manager)
         self.systemd = Systemd(page_manager.dbus, page_manager.polkit_helper)
         self.systemd.signalReceiver(self.systemd_job_removed)
-
-    def __init__(self):
-        name = "page_systemd"
-        title = "SystemD Control"
-        super().__init__(name, title)
 
     def permission_granted_callback(self, status: bool):
         for widget in self.protected_widgets:

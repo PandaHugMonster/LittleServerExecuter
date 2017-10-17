@@ -2,11 +2,17 @@
 # -*- coding: utf-8 -*-
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
+import gettext
 import os
 
 from gi.repository import Gtk
 
 from Lse.AbstractPage import AbstractPage
+from Lse.helpers import FileAccessHelper
+
+localedir = os.path.join(FileAccessHelper.work_directory(), 'locale')
+translate = gettext.translation("pages", localedir)
+_ = translate.gettext
 
 
 class PagePHP(AbstractPage):
@@ -14,7 +20,7 @@ class PagePHP(AbstractPage):
 
     def __init__(self):
         name = "page_php"
-        title = "PHP Environment"
+        title = _("PHP Environment")
         super().__init__(name, title)
 
     @property

@@ -1,0 +1,37 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2017-10-17 17:49+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: ./Lse/pages/PageDatabase.py:23
+msgid "Database Server"
+msgstr "Сервер Баз Данных"
+
+#: ./Lse/pages/PageHttpServer.py:24
+msgid "HTTP Server"
+msgstr "HTTP Сервер"
+
+#: ./Lse/pages/PageInfo.py:21
+msgid "Machine Info"
+msgstr "Информация о машине"
+
+#: ./Lse/pages/PagePHP.py:21
+msgid "PHP Environment"
+msgstr "PHP Среда"
+
+#: ./Lse/pages/PageSystemd.py:31
+msgid "SystemD Control"
+msgstr "Управление SystemD"
+

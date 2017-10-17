@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
-
+import gettext
+import locale
 import os
 
 import gi
@@ -21,6 +22,11 @@ gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, Gio, Gdk, Notify
 
 DBusGMainLoop(set_as_default=True)
+localedir = os.path.join(FileAccessHelper.work_directory(), 'locale')
+
+locale.bindtextdomain("ui", localedir)
+translate = gettext.translation("application", localedir)
+_ = translate.gettext
 
 
 class LseApp(Gtk.Application):
@@ -40,7 +46,7 @@ class LseApp(Gtk.Application):
 
     builder = None
 
-    name = "Little Server Executer"
+    name = _("Little Server Executer")
 
     polkit_helper = None
     dbus = None
@@ -75,6 +81,7 @@ class LseApp(Gtk.Application):
         self.header = Gtk.Box()
         self.builder = Gtk.Builder()
         self.builder.add_from_file(FileAccessHelper.get_ui("face.ui"))
+        self.builder.set_translation_domain("ui")
         self.builder.connect_signals({"app_exit": self.app_exit})
 
     """ Gtk.Application Startup """
@@ -86,7 +93,7 @@ class LseApp(Gtk.Application):
     @property
     def lock_button(self):
         if not self._lock_button:
-            lockbutton = Gtk.ToggleButton(label="Locked")
+            lockbutton = Gtk.ToggleButton(label=_("Locked"))
             icon_theme = Gtk.IconTheme.get_default()
             icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
             icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
@@ -143,10 +150,10 @@ class LseApp(Gtk.Application):
         icon_theme = Gtk.IconTheme.get_default()
 
         if managable:
-            sub_name = 'Unlocked'
+            sub_name = _('Unlocked')
             icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-allow-symbolic")
         else:
-            sub_name = 'Locked'
+            sub_name = _('Locked')
             icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
 
         icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
@@ -182,12 +189,12 @@ class LseApp(Gtk.Application):
         self.page_manager.add_page(PagePHP())
 
     def non_authorized(self, e):
-        notification = Notify.Notification.new(self.name, "You are not authorized to do this", "dialog-error")
+        notification = Notify.Notification.new(self.name, _("You are not authorized to do this"), "dialog-error")
         notification.show()
 
     def app_about(self, action, parameter):
         about_dialog = self.builder.get_object("LseAboutDialog")
-        about_dialog.set_title("About " + self.name)
+        about_dialog.set_title(_("About ") + self.name)
         about_dialog.set_program_name(self.name)
         about_dialog.set_version(self.version)
         about_dialog.run()

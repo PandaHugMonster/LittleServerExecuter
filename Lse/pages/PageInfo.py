@@ -2,16 +2,24 @@
 # -*- coding: utf-8 -*-
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
+import gettext
+import os
+
 from gi.repository import Gtk
 
 from Lse.AbstractPage import AbstractPage
+from Lse.helpers import FileAccessHelper
+
+localedir = os.path.join(FileAccessHelper.work_directory(), 'locale')
+translate = gettext.translation("pages", localedir)
+_ = translate.gettext
 
 
 class PageInfo(AbstractPage):
 
     def __init__(self):
         name = "page_info"
-        title = "Machine Info"
+        title = _("Machine Info")
         super().__init__(name, title)
 
     @property
