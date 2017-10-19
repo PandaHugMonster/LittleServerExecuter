@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2017-10-17 17:49+0200\n"
+"POT-Creation-Date: 2017-10-19 07:36+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,17 +19,33 @@ msgstr ""
 msgid "Database Server"
 msgstr "Сервер Баз Данных"
 
-#: ./Lse/pages/PageHttpServer.py:24
+#: ./Lse/pages/PageDatabase.py:36
+msgid "Mysql Config View"
+msgstr "Отображение конфигурации Mysql"
+
+#: ./Lse/pages/PageHttpServer.py:25
 msgid "HTTP Server"
 msgstr "HTTP Сервер"
 
-#: ./Lse/pages/PageInfo.py:21
+#: ./Lse/pages/PageHttpServer.py:113
+msgid "Apache Config View"
+msgstr "Отображение конфигурации Apache"
+
+#: ./Lse/pages/PageHttpServer.py:114 ./Lse/pages/PagePHP.py:54
+msgid "List of modules"
+msgstr "Список модулей"
+
+#: ./Lse/pages/PageInfo.py:22
 msgid "Machine Info"
 msgstr "Информация о машине"
 
-#: ./Lse/pages/PagePHP.py:21
+#: ./Lse/pages/PagePHP.py:23
 msgid "PHP Environment"
 msgstr "PHP Среда"
+
+#: ./Lse/pages/PagePHP.py:36
+msgid "PHP Config View"
+msgstr "Отображение конфигурации PHP"
 
 #: ./Lse/pages/PageSystemd.py:31
 msgid "SystemD Control"

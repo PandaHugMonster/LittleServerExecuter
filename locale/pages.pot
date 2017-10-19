@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2017-10-17 17:49+0200\n"
+"POT-Creation-Date: 2017-10-19 07:36+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,16 +19,32 @@ msgstr ""
 msgid "Database Server"
 msgstr ""
 
-#: ./Lse/pages/PageHttpServer.py:24
+#: ./Lse/pages/PageDatabase.py:36
+msgid "Mysql Config View"
+msgstr ""
+
+#: ./Lse/pages/PageHttpServer.py:25
 msgid "HTTP Server"
 msgstr ""
 
-#: ./Lse/pages/PageInfo.py:21
+#: ./Lse/pages/PageHttpServer.py:113
+msgid "Apache Config View"
+msgstr ""
+
+#: ./Lse/pages/PageHttpServer.py:114 ./Lse/pages/PagePHP.py:54
+msgid "List of modules"
+msgstr ""
+
+#: ./Lse/pages/PageInfo.py:22
 msgid "Machine Info"
 msgstr ""
 
-#: ./Lse/pages/PagePHP.py:21
+#: ./Lse/pages/PagePHP.py:23
 msgid "PHP Environment"
+msgstr ""
+
+#: ./Lse/pages/PagePHP.py:36
+msgid "PHP Config View"
 msgstr ""
 
 #: ./Lse/pages/PageSystemd.py:31

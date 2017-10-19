@@ -33,7 +33,7 @@ class PagePHP(AbstractPage):
         scroll_view = Gtk.ScrolledWindow()
         config_view = Gtk.TextView()
         scroll_view.add(config_view)
-        self.notebook.append_page(scroll_view, Gtk.Label(label="PHP Config View"))
+        self.notebook.append_page(scroll_view, Gtk.Label(label=_("PHP Config View")))
         txtbuf = config_view.get_buffer()
 
         confpath = "/etc/php/"
@@ -51,7 +51,7 @@ class PagePHP(AbstractPage):
         colbox.set_row_spacing(10)
         colbox.set_column_spacing(10)
         scroll.add(colbox)
-        self.notebook.append_page(scroll, Gtk.Label(label="List of modules"))
+        self.notebook.append_page(scroll, Gtk.Label(label=_("List of modules")))
         modpath = "/usr/lib/php/modules/"
         c = r = 0
         for fil in list(sorted(os.listdir(modpath))):

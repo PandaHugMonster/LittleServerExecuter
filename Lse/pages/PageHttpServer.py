@@ -110,5 +110,5 @@ class PageHttpServer(AbstractPage):
         return scroll
 
     def set_defaults(self, box: Gtk.Box):
-        self.notebook.append_page(self.config_show(), Gtk.Label(label="Apache Config View"))
-        self.notebook.append_page(self.modules_show(), Gtk.Label(label="List of modules"))
+        self.notebook.append_page(self.config_show(), Gtk.Label(label=_("Apache Config View")))
+        self.notebook.append_page(self.modules_show(), Gtk.Label(label=_("List of modules")))

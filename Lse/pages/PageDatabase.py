@@ -33,7 +33,7 @@ class PageDatabase(AbstractPage):
         scroll_view = Gtk.ScrolledWindow()
         config_view = Gtk.TextView()
         scroll_view.add(config_view)
-        self.notebook.append_page(scroll_view, Gtk.Label(label="Mysql Config View"))
+        self.notebook.append_page(scroll_view, Gtk.Label(label=_("Mysql Config View")))
         txtbuf = config_view.get_buffer()
 
         confpath = "/etc/mysql/"
