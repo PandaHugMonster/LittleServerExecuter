@@ -66,10 +66,8 @@ class PageSystemd(AbstractPage):
     def set_defaults(self, box: Gtk.Box):
         self.notebook.append_page(self.groups_show(), Gtk.Label(label=_("Grouped")))
 
-        list = self.systemd.listUnits()
-        print(list[0][0])
-        # for (item) in list:
-        #     print(item)
+        listy = self.systemd.listUnits()
+        print(self.systemd.get_service_common_info(listy[0][0]))
 
         # self.notebook.append_page(self.all_services_show(), Gtk.Label(label=_("All services")))
 
