@@ -1,7 +1,7 @@
 {
 	"app": {
 		"pidfile": "/tmp/pndcc.pid",
-      "version": "0.5.0"
+		"version": "0.5.0"
 	},
 	"services": {
 		"Devices": {
@@ -15,7 +15,7 @@
 		},
 		"Web Group": {
 			"httpd.service": "Apache server",
-          "mariadb.service": "MySQL Database"
+			"mariadb.service": "MySQL Database"
 		},
 		"Databases": {
           "mariadb.service": "MySQL Database"

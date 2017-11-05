@@ -30,198 +30,215 @@ _ = translate.gettext
 
 
 class LseApp(Gtk.Application):
+	""" Application Id """
+	appId = "org.pandahugmonster.Lse"
 
-    """ Application Id """
-    appId = "org.pandahugmonster.Lse"
+	""" Version string """
+	version = "0.5.0"
 
-    """ Version string """
-    version = "0.5.0"
+	pid = None
+	window = None
 
-    pid = None
-    window = None
+	app_header = None
+	page_manager_header = None
+	_lock_button = None
 
-    app_header = None
-    page_manager_header = None
-    _lock_button = None
+	builder = None
 
-    builder = None
+	name = _("Little Server Executer")
 
-    name = _("Little Server Executer")
+	polkit_helper = None
+	dbus = None
 
-    polkit_helper = None
-    dbus = None
+	event_granted_callbacks = []
 
-    event_granted_callbacks = []
+	machine = None
+	page_manager = None
+	header = None
 
-    machine = None
-    page_manager = None
-    header = None
+	""" Constructor """
 
-    """ Constructor """
-    def __init__(self):
-        self.pid = str(os.getpid())
-        super().__init__()
-        self.prepare_interface_vars()
-        self.prepare_other_libs()
-        self.prepare_app_defaults()
+	def __init__(self):
+		self.pid = str(os.getpid())
+		super().__init__()
+		self.prepare_interface_vars()
+		self.prepare_other_libs()
+		self.prepare_app_defaults()
 
-    def prepare_app_defaults(self):
-        # self.machine = machine if machine else LocalMachine()
-        self.machine = LocalMachine()
-        self.page_manager = PageManager(self.machine, self)
-        self.page_manager.set_extra_libs(dbus=self.dbus, polkit=self.polkit_helper)
+	def prepare_app_defaults(self):
+		# self.machine = machine if machine else LocalMachine()
+		self.machine = LocalMachine()
+		self.page_manager = PageManager(self.machine, self)
+		self.page_manager.set_extra_libs(dbus=self.dbus, polkit=self.polkit_helper)
 
-    def prepare_other_libs(self):
-        Gtk.Application.__init__(self, application_id=self.appId)
-        Notify.init(self.pid)
-        self.dbus = DBus()
-        self.polkit_helper = PolkitAuth(self.dbus, self.pid)
+	def prepare_other_libs(self):
+		Gtk.Application.__init__(self, application_id=self.appId)
+		Notify.init(self.pid)
+		self.dbus = DBus()
+		self.polkit_helper = PolkitAuth(self.dbus, self.pid)
 
-    def prepare_interface_vars(self):
-        self.header = Gtk.Box()
-        self.builder = Gtk.Builder()
-        self.builder.add_from_file(FileAccessHelper.get_ui("face.ui"))
-        self.builder.set_translation_domain("ui")
-        self.builder.connect_signals({"app_exit": self.app_exit})
+	def prepare_interface_vars(self):
+		self.header = Gtk.Box()
+		self.builder = Gtk.Builder()
+		self.builder.add_from_file(FileAccessHelper.get_ui("face.ui"))
+		self.builder.add_from_file(FileAccessHelper.get_ui("shell.ui"))
+		self.builder.set_translation_domain("ui")
+		self.builder.connect_signals({"app_exit": self.app_exit})
 
-    """ Gtk.Application Startup """
-    def do_startup(self):
-        Gtk.Application.do_startup(self)
-        self.set_app_menu(self.builder.get_object("appmenu"))
-        self.attach_actions()
+	""" Gtk.Application Startup """
 
-    @property
-    def lock_button(self):
-        if not self._lock_button:
-            lockbutton = Gtk.ToggleButton(label=_("Locked"))
-            icon_theme = Gtk.IconTheme.get_default()
-            icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
-            icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
-            img_lock = Gtk.Image.new_from_pixbuf(icon_info.load_icon())
-            lockbutton.set_image(img_lock)
-            lockbutton.set_always_show_image(True)
-            lockbutton.connect("clicked", self.obtain_permission)
-            self._lock_button = lockbutton
+	def do_startup(self):
+		Gtk.Application.do_startup(self)
+		self.set_app_menu(self.builder.get_object("appmenu"))
+		self.attach_actions()
 
-        return self._lock_button
+	@property
+	def lock_button(self):
+		if not self._lock_button:
+			lockbutton = Gtk.ToggleButton(label=_("Locked"))
+			icon_theme = Gtk.IconTheme.get_default()
+			icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
+			icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
+			img_lock = Gtk.Image.new_from_pixbuf(icon_info.load_icon())
+			lockbutton.set_image(img_lock)
+			lockbutton.set_always_show_image(True)
+			lockbutton.connect("clicked", self.obtain_permission)
+			self._lock_button = lockbutton
 
-    def prepare_headers(self):
-        self.app_header = Gtk.HeaderBar.new()
-        self.app_header.props.show_close_button = False
-        self.app_header.set_title(self.name)
+		return self._lock_button
 
-        self.page_manager_header = self.page_manager.header
-        self.page_manager_header.props.show_close_button = True
-        self.page_manager_header.pack_end(self.lock_button)
+	def prepare_headers(self):
+		self.app_header = Gtk.HeaderBar()
+		self.app_header.props.show_close_button = True
+		title = Gtk.Label(label=self.name)
+		title.get_style_context().add_class('lse-app-title')
+		self.app_header.set_custom_title(title)
 
-        self.window.hsize_group.add_widget(self.app_header)
-        self.window.hsize_group.add_widget(self.page_manager.side_bar)
-        self.window.set_titlebar(self.header)
+		self.page_manager_header = self.page_manager.header
+		self.page_manager_header.props.show_close_button = True
+		self.page_manager_header.pack_end(self.lock_button)
+		self._update_decorations(Gtk.Settings.get_default(), None)
 
-        self.header.add(self.app_header)
-        self.header.add(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
-        self.header.pack_start(self.page_manager_header, True, True, 0)
+		# self.window.hsize_group.add_widget(self.app_header)
+		self.window.hsize_group.add_widget(self.app_header)
+		self.window.hsize_group.add_widget(self.page_manager.side_bar)
+		self.window.set_titlebar(self.header)
 
-    def prepare_decorations(self):
-        self.window = self.builder.get_object("LseWindow")
-        self.window.hsize_group = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
-        self.window.add(self.page_manager.viewpoint)
-        self.add_window(self.window)
-        self.load_css()
+		self.header.add(self.app_header)
+		self.header.add(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
+		self.header.pack_start(self.page_manager_header, True, True, 0)
 
-    """ Activation """
+	def prepare_decorations(self):
+		self.window = self.builder.get_object("LseWindow")
+		self.window.hsize_group = Gtk.SizeGroup(mode=Gtk.SizeGroupMode.HORIZONTAL)
+		self.window.add(self.page_manager.viewpoint)
+		self.add_window(self.window)
+		self.load_css()
 
-    def do_activate(self):
-        self.prepare_decorations()
-        self.prepare_headers()
-        self.preapre_pages()
+	""" Activation """
 
-        self.change_sesitivity_of_protected_widgets(self.polkit_helper.granted)
-        self.window.show_all()
+	def do_activate(self):
+		self.prepare_decorations()
+		self.prepare_headers()
+		self.prepare_pages()
 
-    def obtain_permission(self, lockbutton):
-        if lockbutton.get_active():
-            managable = self.polkit_helper.grantAccess(Systemd.ACTION_MANAGE_UNITS)
-        else:
-            if self.polkit_helper.granted:
-                self.polkit_helper.revokeAccess()
-            managable = False
+		self.change_sesitivity_of_protected_widgets(self.polkit_helper.granted)
+		Gtk.Settings.get_default().connect("notify::gtk-decoration-layout", self._update_decorations)
+		self.window.show_all()
 
-        icon_theme = Gtk.IconTheme.get_default()
+	def obtain_permission(self, lockbutton):
+		if lockbutton.get_active():
+			managable = self.polkit_helper.grantAccess(Systemd.ACTION_MANAGE_UNITS)
+		else:
+			if self.polkit_helper.granted:
+				self.polkit_helper.revokeAccess()
+			managable = False
 
-        if managable:
-            sub_name = _('Unlocked')
-            icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-allow-symbolic")
-        else:
-            sub_name = _('Locked')
-            icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
+		icon_theme = Gtk.IconTheme.get_default()
 
-        icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
-        img_lock = Gtk.Image.new_from_pixbuf(icon_info.load_icon())
+		if managable:
+			sub_name = _('Unlocked')
+			icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-allow-symbolic")
+		else:
+			sub_name = _('Locked')
+			icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
 
-        lockbutton.set_image(img_lock)
+		icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
+		img_lock = Gtk.Image.new_from_pixbuf(icon_info.load_icon())
 
-        lockbutton.set_label(sub_name)
-        lockbutton.set_active(managable)
+		lockbutton.set_image(img_lock)
 
-        self.change_sesitivity_of_protected_widgets(managable)
+		lockbutton.set_label(sub_name)
+		lockbutton.set_active(managable)
 
-    def change_sesitivity_of_protected_widgets(self, active=False):
-        for callback in self.event_granted_callbacks:
-            callback(active)
+		self.change_sesitivity_of_protected_widgets(managable)
 
-    @staticmethod
-    def load_css():
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_path(FileAccessHelper.get_ui("application.css"))
-        screen = Gdk.Screen.get_default()
-        context = Gtk.StyleContext()
-        context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+	def change_sesitivity_of_protected_widgets(self, active=False):
+		for callback in self.event_granted_callbacks:
+			callback(active)
 
-    def attach_permission_callback(self, callback):
-        self.event_granted_callbacks.append(callback)
+	@staticmethod
+	def load_css():
+		css_provider = Gtk.CssProvider()
+		css_provider.load_from_path(FileAccessHelper.get_ui("application.css"))
+		screen = Gdk.Screen.get_default()
+		context = Gtk.StyleContext()
+		context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
-    def preapre_pages(self):
-        self.page_manager.add_page(PageInfo())
-        self.page_manager.add_page(PageSystemd())
-        self.page_manager.add_page(PageHttpServer())
-        self.page_manager.add_page(PageDatabase())
-        self.page_manager.add_page(PagePHP())
+	def attach_permission_callback(self, callback):
+		self.event_granted_callbacks.append(callback)
 
-    def non_authorized(self, e):
-        notification = Notify.Notification.new(self.name, _("You are not authorized to do this"), "dialog-error")
-        notification.show()
+	def prepare_pages(self):
+		self.page_manager.add_page(PageInfo())
+		self.page_manager.add_page(PageSystemd())
+		self.page_manager.add_page(PageHttpServer())
+		self.page_manager.add_page(PageDatabase())
+		self.page_manager.add_page(PagePHP())
 
-    def app_about(self, action, parameter):
-        about_dialog = self.builder.get_object("LseAboutDialog")
-        about_dialog.set_title(_("About ") + self.name)
-        about_dialog.set_program_name(self.name)
-        about_dialog.set_version(self.version)
-        about_dialog.run()
-        about_dialog.hide()
+	def non_authorized(self, e):
+		notification = Notify.Notification.new(self.name, _("You are not authorized to do this"), "dialog-error")
+		notification.show()
 
-    def app_exit(self, parameter, act=None):
-        self.quit()
+	def app_about(self, action, parameter):
+		about_dialog = self.builder.get_object("LseAboutDialog")
+		about_dialog.set_title(_("About ") + self.name)
+		about_dialog.set_program_name(self.name)
+		about_dialog.set_version(self.version)
+		about_dialog.run()
+		about_dialog.hide()
 
-    def app_settings(self, parameter, act=None):
-        settings_dialog = self.builder.get_object("LseSettingsDialog")
-        response = settings_dialog.run()
-        if response == -5:
-            print("Save me [not implemented yet]")
-        elif response == -6:
-            print("Cancel me [not implemented yet]")
-        settings_dialog.hide()
+	def app_exit(self, parameter, act=None):
+		self.quit()
 
-    def attach_actions(self):
-        about_action = Gio.SimpleAction.new("about", None)
-        about_action.connect("activate", self.app_about)
-        self.add_action(about_action)
+	def app_settings(self, parameter, act=None):
+		settings_dialog = self.builder.get_object("LseSettingsDialog")
+		response = settings_dialog.run()
+		if response == -5:
+			print("Save me [not implemented yet]")
+		elif response == -6:
+			print("Cancel me [not implemented yet]")
+		settings_dialog.hide()
 
-        quit_action = Gio.SimpleAction.new("quit", None)
-        quit_action.connect("activate", self.app_exit)
-        self.add_action(quit_action)
+	def attach_actions(self):
+		about_action = Gio.SimpleAction.new("about", None)
+		about_action.connect("activate", self.app_about)
+		self.add_action(about_action)
 
-        settings_action = Gio.SimpleAction.new("settings", None)
-        settings_action.connect("activate", self.app_settings)
+		quit_action = Gio.SimpleAction.new("quit", None)
+		quit_action.connect("activate", self.app_exit)
+		self.add_action(quit_action)
 
-    # self.add_action(settingsAction)
+		settings_action = Gio.SimpleAction.new("settings", None)
+		settings_action.connect("activate", self.app_settings)
+		self.add_action(settings_action)
+
+	# self.add_action(settingsAction)
+	def _update_decorations(self, settings, pspec):
+		layout_desc = settings.props.gtk_decoration_layout
+		tokens = layout_desc.split(":", 1)
+		print(layout_desc)
+		if len(tokens) > 1:
+			self.page_manager_header.props.decoration_layout = ":" + tokens[1]
+		else:
+			self.page_manager_header.props.decoration_layout = ""
+		self.app_header.props.decoration_layout = tokens[0]

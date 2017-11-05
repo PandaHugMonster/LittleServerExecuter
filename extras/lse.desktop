@@ -1,19 +1,19 @@
 #!/usr/bin/env xdg-open
 [Desktop Entry]
 Version=3.0
-Terminal=true
+Terminal=false
 NoDisplay=false
 Icon=applications-development
 Type=Application
 Categories=Development;
-Exec=sudo /opt/lse/littleServerExecuter.py
 Name=Little Server Executer
 GenericName=PandaServer
 Comment=Application to control development needs.
 StartupNotify=true
 StartupWMClass=PandaServer
+Exec=/home/ivan/development/lse/lse.py
 ##Define Actions
-Actions=StartAll;StopAll;
+#Actions=StartAll;StopAll;
 
 #[Desktop Action StartAll]
 #Name=Start all

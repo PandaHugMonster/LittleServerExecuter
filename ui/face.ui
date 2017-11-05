@@ -491,4 +491,16 @@
       <placeholder/>
     </child>
   </object>
+    <object class="GtkMenu" id="appmenu">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <child>
+            <object class="GtkMenuItem" id="exitact">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Exit</property>
+                <property name="use_underline">True</property>
+            </object>
+        </child>
+    </object>
 </interface>

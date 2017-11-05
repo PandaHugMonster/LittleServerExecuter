@@ -31,7 +31,7 @@ class PageManager:
 
     def __init__(self, machine: AbstractMachine, app):
         self._app = app
-        self._header = Gtk.HeaderBar.new()
+        self._header = Gtk.HeaderBar()
         self._machine = machine
         self._main_view = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self._stack = Gtk.Stack()

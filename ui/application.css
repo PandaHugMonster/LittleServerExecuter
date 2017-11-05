@@ -1,6 +1,6 @@
 /* the sidebar */
 .lse-sidebar, lse-window-color {
-    background-color: shade(@theme_bg_color, 0.99);
+	background-color: shade(@theme_bg_color, 0.99);
 }
 .lse-sidebar-row {
 	padding: 10px;
@@ -11,3 +11,6 @@
 	font-weight: bold;
 }
 
+.lse-app-title {
+	font-size: 12px;
+}
