@@ -33,11 +33,7 @@ class Systemd:
 
     def signalReceiver(self, handler, jobtype=JOB_REMOVED):
         self.subscribe()
-        self.dbus.attachEvent(handler,
-                              jobtype,
-                              self.OBJ_NAME_MANAGER,
-                              self.OBJ_NAME,
-                              self.OBJ_PATH)
+        self.dbus.attachEvent(handler, jobtype, self.OBJ_NAME_MANAGER, self.OBJ_NAME, self.OBJ_PATH)
 
     def startService(self, service, errorHandler=None):
         if not errorHandler:
@@ -76,6 +72,9 @@ class Systemd:
                 return self.startService(service, errorHandler)
 
         return False
+
+    def listUnits(self):
+        return self.manager.ListUnits()
 
     def errorHappened(self, e):
         print(e)

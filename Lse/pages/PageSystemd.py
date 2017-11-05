@@ -21,6 +21,7 @@ _ = translate.gettext
 class PageSystemd(AbstractPage):
 
     grid = None
+    notebook = None
     _is_permission_needed = True
     protected_widgets = []
     systemd = None
@@ -42,18 +43,35 @@ class PageSystemd(AbstractPage):
 
     @property
     def get_main_container(self) -> Gtk.Box:
+        if not self.notebook:
+            self.notebook = Gtk.Notebook.new()
+        return self.notebook
+
+    def groups_show(self):
         self.grid = Gtk.Grid()
         sw = Gtk.ScrolledWindow()
         sw.add(self.grid)
-        return sw
 
-    def set_defaults(self, box: Gtk.Box):
         self.grid.set_border_width(20)
         self.grid.set_row_spacing(15)
         self.grid.set_column_spacing(20)
         self.grid.get_style_context().add_class("lse-grid")
         # builder.get_object("place_kernel").set_text(machine.version)
         self.build_table()
+        return sw
+
+    def all_services_show(self):
+        pass
+
+    def set_defaults(self, box: Gtk.Box):
+        self.notebook.append_page(self.groups_show(), Gtk.Label(label=_("Grouped")))
+
+        list = self.systemd.listUnits()
+        print(list[0][0])
+        # for (item) in list:
+        #     print(item)
+
+        # self.notebook.append_page(self.all_services_show(), Gtk.Label(label=_("All services")))
 
     def prepare_services(self):
         sub_services = self.page_manager.machine.settings['services']
