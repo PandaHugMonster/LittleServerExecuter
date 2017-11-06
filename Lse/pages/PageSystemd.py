@@ -6,6 +6,7 @@ import datetime
 import gettext
 import os
 
+from dbus.exceptions import DBusException
 from gi.repository import Gtk
 
 from Lse.AbstractPage import AbstractPage
@@ -26,6 +27,7 @@ class PageSystemd(AbstractPage):
     protected_widgets = []
     systemd = None
     _services_completed = None
+    all_services = []
 
     def __init__(self):
         name = "page_systemd"
@@ -60,32 +62,54 @@ class PageSystemd(AbstractPage):
         self.build_table()
         return sw
 
+    def all_services_list(self):
+        listy = self.systemd.listUnits()
+        res = {}
+
+        for item in listy:
+            sub = self.systemd.get_service_common_info(item)
+            res[sub['Id']] = sub['Description'] + " [ %s ]" % sub['Id']
+
+        return {'All Services': res}
+
     def all_services_show(self):
-        pass
+        rawservices = self.all_services_list()
+
+        grid = Gtk.Grid()
+        sw = Gtk.ScrolledWindow()
+        sw.add(grid)
+
+        grid.set_border_width(20)
+        grid.set_row_spacing(15)
+        grid.set_column_spacing(20)
+        grid.get_style_context().add_class("lse-grid")
+
+        self.all_services = self.prepare_services(rawservices)
+        self.build_table(self.all_services, grid)
+
+        return sw
 
     def set_defaults(self, box: Gtk.Box):
         self.notebook.append_page(self.groups_show(), Gtk.Label(label=_("Grouped")))
+        self.notebook.append_page(self.all_services_show(), Gtk.Label(label=_("All services")))
 
-        listy = self.systemd.listUnits()
-        print(self.systemd.get_service_common_info(listy[0][0]))
+    def prepare_services(self, sub_services=None):
+        if not sub_services:
+            sub_services = self.page_manager.machine.settings['services']
 
-        # self.notebook.append_page(self.all_services_show(), Gtk.Label(label=_("All services")))
-
-    def prepare_services(self):
-        sub_services = self.page_manager.machine.settings['services']
         services = {}
         for (group, datag) in sub_services.items():
             services[group] = {}
             for (service, title) in datag.items():
-                service_unit = self.systemd.loadUnit(service)
-                service_interface = self.page_manager.dbus.getObject('org.freedesktop.systemd1', str(service_unit))
-                state = service_interface.Get('org.freedesktop.systemd1.Unit', 'ActiveState',
-                                              dbus_interface='org.freedesktop.DBus.Properties')
+                try:
+                    state = self.systemd.get_property(service, 'ActiveState')
+                except DBusException:
+                    state = "inactive"
+                    print("NOTL: :( %s" % service)
+
                 services[group][service] = {
-                    'unit': service_unit,
-                    'interface': service_interface,
-                    'title': title,
-                    'state': state,
+                    'title': str(title),
+                    'state': str(state),
                     'switch': Gtk.Switch(),
                     'spinner': Gtk.Spinner(),
                 }
@@ -96,10 +120,14 @@ class PageSystemd(AbstractPage):
             self._services_completed = self.prepare_services()
         return self._services_completed
 
-    def build_table(self):
+    def build_table(self, services=None, grid=None):
         machine = self.page_manager.machine
         builder = self.page_manager.builder
-        services = self.get_services_completed()
+        if not grid:
+            grid = self.grid
+
+        if not services:
+            services = self.get_services_completed()
 
         if services:
             prev = None
@@ -126,26 +154,26 @@ class PageSystemd(AbstractPage):
                 box.add(stop_all_button)
 
                 if not prev:
-                    self.grid.add(group_name)
+                    grid.add(group_name)
                 else:
-                    self.grid.attach_next_to(group_name, prev, Gtk.PositionType.BOTTOM, 1, 1)
-                self.grid.attach_next_to(box, group_name, Gtk.PositionType.RIGHT, 1, 1)
+                    grid.attach_next_to(group_name, prev, Gtk.PositionType.BOTTOM, 1, 1)
+                grid.attach_next_to(box, group_name, Gtk.PositionType.RIGHT, 1, 1)
                 prepre = None
                 for (service, data) in datag.items():
                     switch = data['switch']
                     spinner = data['spinner']
                     switch.set_active(data['state'] == 'active')
-                    switch.connect("notify::active", self.work_with_service)
+                    switch.connect("notify::active", self.work_with_service, services)
                     self.protected_widgets.append(switch)
                     label = Gtk.Label(label=data['title'], xalign=0)
 
                     if not prepre:
                         prepre = True
-                        self.grid.attach_next_to(switch, group_name, Gtk.PositionType.BOTTOM, 1, 1)
+                        grid.attach_next_to(switch, group_name, Gtk.PositionType.BOTTOM, 1, 1)
                     else:
-                        self.grid.attach_next_to(switch, prev, Gtk.PositionType.BOTTOM, 1, 1)
-                    self.grid.attach_next_to(label, switch, Gtk.PositionType.RIGHT, 1, 1)
-                    self.grid.attach_next_to(spinner, label, Gtk.PositionType.RIGHT, 1, 1)
+                        grid.attach_next_to(switch, prev, Gtk.PositionType.BOTTOM, 1, 1)
+                    grid.attach_next_to(label, switch, Gtk.PositionType.RIGHT, 1, 1)
+                    grid.attach_next_to(spinner, label, Gtk.PositionType.RIGHT, 1, 1)
                     prev = switch
 
     def process_group_services_now(self, action, group_name):
@@ -163,8 +191,10 @@ class PageSystemd(AbstractPage):
         switcher.set_state(state)
         self.switches_service_lock = False
 
-    def work_with_service(self, switch, data):
-        services = self.get_services_completed()
+    def work_with_service(self, switch, x, services=None):
+
+        if not services:
+            services = self.get_services_completed()
 
         if not self.switches_service_lock:
             for (group, datag) in services.items():
@@ -183,14 +213,13 @@ class PageSystemd(AbstractPage):
                             self.systemd.stopService(service)
 
     def systemd_job_removed(self, arg1, path, service, status):
-        for (group, datag) in self.get_services_completed().items():
+        for (group, datag) in self.all_services.items():
             for (servicein, data) in datag.items():
                 spinner = data["spinner"]
                 if servicein == service:
                     if status == 'done':
                         spinner.stop()
-                        res = data['interface'].Get('org.freedesktop.systemd1.Unit', 'ActiveState',
-                                                    dbus_interface='org.freedesktop.DBus.Properties')
+                        res = self.systemd.get_property(servicein, 'ActiveState')
                         if res == 'active':
                             self.preserved_switch(data['switch'], True)
                         else:

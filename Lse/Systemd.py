@@ -4,6 +4,8 @@
 # Version: 0.4
 import array
 
+from os.path import basename
+
 
 class Systemd:
 	ACTION_MANAGE_UNITS = "org.freedesktop.systemd1.manage-units"
@@ -22,11 +24,10 @@ class Systemd:
 		self.dbus = dbus
 		self.polkit = polkit
 		self.objected = self.dbus.getObject(self.OBJ_NAME, self.OBJ_PATH)
+		self.cachedmanager = self.dbus.getInterface(self.objected, self.OBJ_NAME_MANAGER)
 
 	@property
 	def manager(self):
-		if not self.cachedmanager:
-			self.cachedmanager = self.dbus.getInterface(self.objected, self.OBJ_NAME_MANAGER)
 		return self.cachedmanager
 
 	def subscribe(self):
@@ -75,10 +76,17 @@ class Systemd:
 		return False
 
 	def listUnits(self):
-		return self.manager.ListUnits()
+		files = self.manager.ListUnitFiles()
+		res = []
+		for f in files:
+			key = basename(f[0])
+			if key.find('@') == -1:
+				res.append(key)
+		return res
+		# os.path.basename
 
 	def _get_properties_interface(self, unit_name: str):
-		unit_interface = self.manager.GetUnit(unit_name)
+		unit_interface = self.loadUnit(unit_name)
 		objected = self.dbus.getObject(self.OBJ_NAME, unit_interface)
 		sub = self.dbus.getInterface(objected, 'org.freedesktop.DBus.Properties')
 		return sub
