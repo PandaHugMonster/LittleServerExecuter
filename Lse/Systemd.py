@@ -10,7 +10,14 @@ from os.path import basename
 class Systemd:
 	ACTION_MANAGE_UNITS = "org.freedesktop.systemd1.manage-units"
 
-	JOB_REMOVED = 'JobRemoved'
+	SIG_JOB_REMOVED = 'JobRemoved'
+	SIG_JOB_NEW = 'JobNew'
+	SIG_RELOADING = 'Reloading'
+	SIG_STARTUP_FINISHED = 'StartupFinished'
+	SIG_UNIT_FILES_CHANGED = 'UnitFilesChanged'
+	SIG_UNIT_NEW = 'UnitNew'
+	SIG_UNIT_REMOVED = 'UnitRemoved'
+
 	OBJ_NAME = 'org.freedesktop.systemd1'
 	OBJ_PATH = '/org/freedesktop/systemd1'
 	OBJ_NAME_MANAGER = 'org.freedesktop.systemd1.Manager'
@@ -33,8 +40,7 @@ class Systemd:
 	def subscribe(self):
 		self.manager.Subscribe()
 
-	def signalReceiver(self, handler, jobtype=JOB_REMOVED):
-		self.subscribe()
+	def signalReceiver(self, handler, jobtype=SIG_JOB_REMOVED):
 		self.dbus.attachEvent(handler, jobtype, self.OBJ_NAME_MANAGER, self.OBJ_NAME, self.OBJ_PATH)
 
 	def startService(self, service, errorHandler=None):

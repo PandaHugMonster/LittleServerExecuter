@@ -4,3 +4,4 @@ from Lse.AbstractPage import AbstractPage
 from Lse.PageManager import PageManager
 from Lse.PolkitAuth import PolkitAuth
 from Lse.Systemd import Systemd
+from Lse.ServiceManager import ServiceManager
