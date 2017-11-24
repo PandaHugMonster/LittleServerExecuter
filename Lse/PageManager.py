@@ -25,6 +25,7 @@ class PageManager:
 	_stack = None
 	_sidebar = None
 	_sidebar_listbox = None
+	default_page = None
 
 	_name_index = {}
 	_pages = []
@@ -35,8 +36,6 @@ class PageManager:
 		self._machine = machine
 		self._main_view = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		self._stack = Gtk.Stack()
-
-		# self.recompose_ui("systemd")
 
 		self._main_view.pack_start(self.side_bar, False, False, 0)
 		self._main_view.pack_start(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL), False, False, 0)
@@ -54,6 +53,7 @@ class PageManager:
 
 	def change_viewpoint(self, list, row):
 		if isinstance(row, Gtk.ListBoxRow):
+			self._app.set_default_page(row.childname)
 			self._stack.set_visible_child_name(row.childname)
 			self.recompose_ui(row.childname)
 
@@ -67,6 +67,12 @@ class PageManager:
 		self.header.show_all()
 
 		self._app.window.queue_draw()
+
+	def select_page(self, alias: str):
+		rows = self._sidebar_listbox.get_children()
+		for row in rows:
+			if row.childname == alias:
+				self._sidebar_listbox.select_row(row)
 
 	@property
 	def side_bar(self):

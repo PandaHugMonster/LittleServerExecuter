@@ -43,6 +43,7 @@ class LseApp(Gtk.Application):
 	app_header = None
 	page_manager_header = None
 	_lock_button = None
+	_settings_path = None
 	_settings = None
 	_pidfile = None
 
@@ -71,8 +72,8 @@ class LseApp(Gtk.Application):
 		self.prepare_app_defaults()
 
 	def prepare_start(self):
-		settings_path = FileAccessHelper.get_settings_path()
-		self._settings = self._get_settings(settings_path)
+		self._settings_path = FileAccessHelper.get_settings_path()
+		self._settings = self._load_settings(self._settings_path)
 		self.pid = str(os.getpid())
 		self._pidfile = '/tmp/pndcc.pid'
 
@@ -80,16 +81,33 @@ class LseApp(Gtk.Application):
 			self._pidfile = self._settings['pidfile']
 
 		if FileAccessHelper.isexist(self._pidfile):
-			print('Quitting')
+			print('Pid file exists. Quitting.')
 			self.quit()
 		else:
 			FileAccessHelper.save(self._pidfile, self.pid)
 
-	def _get_settings(self, settings_path:str):
+	def set_default_page(self, alias: str):
+		self._settings['current_page'] = alias
+		self._save_settings(self._settings_path, self._settings)
+
+	@property
+	def settings(self):
+		return self._settings
+
+
+
+	@staticmethod
+	def _load_settings(settings_path:str):
 		json_data = open(settings_path)
 		_settings = json.load(json_data)
 		json_data.close()
 		return _settings
+
+	@staticmethod
+	def _save_settings(settings_path:str, settings):
+		json_data = open(settings_path, 'w')
+		json.dump(settings, json_data)
+		json_data.close()
 
 	def prepare_app_defaults(self):
 		# self.machine = machine if machine else LocalMachine()
@@ -214,6 +232,8 @@ class LseApp(Gtk.Application):
 		self.page_manager.add_page(PageHttpServer())
 		self.page_manager.add_page(PageDatabase())
 		self.page_manager.add_page(PagePHP())
+		if self.settings['current_page']:
+			self.page_manager.select_page(self.settings['current_page'])
 
 	def non_authorized(self, e):
 		notification = Notify.Notification.new(self.name, _("You are not authorized to do this"), "dialog-error")
