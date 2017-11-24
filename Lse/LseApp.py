@@ -3,6 +3,7 @@
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
 import gettext
+import json
 import locale
 import os
 
@@ -42,6 +43,8 @@ class LseApp(Gtk.Application):
 	app_header = None
 	page_manager_header = None
 	_lock_button = None
+	_settings = None
+	_pidfile = None
 
 	builder = None
 
@@ -59,11 +62,34 @@ class LseApp(Gtk.Application):
 	""" Constructor """
 
 	def __init__(self):
-		self.pid = str(os.getpid())
 		super().__init__()
+
+		self.prepare_start()
+
 		self.prepare_interface_vars()
 		self.prepare_other_libs()
 		self.prepare_app_defaults()
+
+	def prepare_start(self):
+		settings_path = FileAccessHelper.get_settings_path()
+		self._settings = self._get_settings(settings_path)
+		self.pid = str(os.getpid())
+		self._pidfile = '/tmp/pndcc.pid'
+
+		if self._settings['pidfile']:
+			self._pidfile = self._settings['pidfile']
+
+		if FileAccessHelper.isexist(self._pidfile):
+			print('Quitting')
+			self.quit()
+		else:
+			FileAccessHelper.save(self._pidfile, self.pid)
+
+	def _get_settings(self, settings_path:str):
+		json_data = open(settings_path)
+		_settings = json.load(json_data)
+		json_data.close()
+		return _settings
 
 	def prepare_app_defaults(self):
 		# self.machine = machine if machine else LocalMachine()
@@ -95,7 +121,8 @@ class LseApp(Gtk.Application):
 	@property
 	def lock_button(self):
 		if not self._lock_button:
-			lockbutton = Gtk.ToggleButton(label=_("Locked"))
+			lockbutton = Gtk.ToggleButton()
+			lockbutton.set_label(_('Grant access'))
 			icon_theme = Gtk.IconTheme.get_default()
 			icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
 			icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
@@ -110,13 +137,11 @@ class LseApp(Gtk.Application):
 	def prepare_headers(self):
 		self.app_header = Gtk.HeaderBar()
 		self.app_header.props.show_close_button = True
-		title = Gtk.Label(label=self.name)
-		title.get_style_context().add_class('lse-app-title')
-		self.app_header.set_custom_title(title)
+		self.app_header.set_custom_title(self.lock_button)
 
 		self.page_manager_header = self.page_manager.header
 		self.page_manager_header.props.show_close_button = True
-		self.page_manager_header.pack_end(self.lock_button)
+
 		self._update_decorations(Gtk.Settings.get_default(), None)
 
 		# self.window.hsize_group.add_widget(self.app_header)
@@ -156,20 +181,15 @@ class LseApp(Gtk.Application):
 
 		icon_theme = Gtk.IconTheme.get_default()
 
-		if managable:
-			sub_name = _('Unlocked')
-			icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-allow-symbolic")
-		else:
-			sub_name = _('Locked')
+		if not managable:
 			icon = Gio.ThemedIcon.new_with_default_fallbacks("changes-prevent-symbolic")
-
-		icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
-		img_lock = Gtk.Image.new_from_pixbuf(icon_info.load_icon())
-
-		lockbutton.set_image(img_lock)
-
-		lockbutton.set_label(sub_name)
-		lockbutton.set_active(managable)
+			icon_info = icon_theme.lookup_by_gicon(icon, 16, 0)
+			img_lock = Gtk.Image.new_from_pixbuf(icon_info.load_icon())
+			lockbutton.set_image(img_lock)
+			lockbutton.set_active(managable)
+		else:
+			self.app_header.set_custom_title(Gtk.Label(label=_('LSE')))
+			self.app_header.show_all()
 
 		self.change_sesitivity_of_protected_widgets(managable)
 
@@ -208,6 +228,8 @@ class LseApp(Gtk.Application):
 		about_dialog.hide()
 
 	def app_exit(self, parameter, act=None):
+		if FileAccessHelper.isexist(self._pidfile):
+			FileAccessHelper.delete(self._pidfile)
 		self.quit()
 
 	def app_settings(self, parameter, act=None):

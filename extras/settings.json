@@ -1,28 +1,5 @@
 {
-	"app": {
-		"pidfile": "/tmp/pndcc.pid",
-		"version": "0.5.0"
-	},
-	"services": {
-		"Devices": {
-			"bluetooth.service": "Bluetooth service",
-			"colord.service": "Manage, Install and Generate Color Profiles",
-			"udisks2.service": "Disk Manager"
-		},
-		"Servers": {
-			"glassfish.service": "Glassfish4 server",
-			"httpd.service": "Apache server"
-		},
-		"Web Group": {
-			"httpd.service": "Apache server",
-			"mariadb.service": "MySQL Database"
-		},
-		"Databases": {
-          "mariadb.service": "MySQL Database"
-		},
-		"Other": {
-			"upower.service": "Daemon for power management",
-			"geoclue.service": "Location Lookup Service"
-		}
-	}
+	"pidfile": "/tmp/pndcc.pid",
+	"version": "0.5.0",
+	"current_page": null
 }

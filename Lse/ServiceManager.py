@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
+import array
+import os
 from collections import OrderedDict
 
 from Lse.Systemd import Systemd
@@ -54,6 +56,25 @@ class ServiceManager:
 			if i < 10 and (not excluded or key not in excluded) and (key not in in_code_excluded):
 				res[key] = services[key]
 				i += 1
+
+		return res
+
+	def get_only(self, included: list) -> OrderedDict:
+		res = OrderedDict()
+		services = OrderedDict(sorted(self._services.items(), key=lambda t: t[0].lower()))
+		for key in services:
+			if key in included:
+				res[key] = services[key]
+
+		return res
+
+	def get_only_type(self, types: array) -> OrderedDict:
+		res = OrderedDict()
+		services = OrderedDict(sorted(self._services.items(), key=lambda t: t[0].lower()))
+		for key in services:
+			filename, file_extension = os.path.splitext(key)
+			if file_extension[1:] in types:
+				res[key] = services[key]
 
 		return res
 

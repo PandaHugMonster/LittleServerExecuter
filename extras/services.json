@@ -1,0 +1,39 @@
+{
+	"groups": [
+		{
+			"title": "Devices",
+			"services": [
+				{"key": "bluetooth.service", "title": "Bluetooth service"},
+				{"key": "colord.service", "title": "Manage, Install and Generate Color Profiles"},
+				{"key": "udisks2.service", "title": "Disk Manager"}
+			]
+		},
+		{
+			"title": "Servers",
+			"services": [
+				{"key": "glassfish.service", "title": "Glassfish4 server"},
+				{"key": "httpd.service", "title": "Apache server"}
+			]
+		},
+		{
+			"title": "Web Group",
+			"services": [
+				{"key": "httpd.service", "title": "Apache server"},
+				{"key": "mariadb.service", "title": "MySQL Database"}
+			]
+		},
+		{
+			"title": "Databases",
+			"services": [
+				{"key": "mariadb.service", "title": "MySQL Database"}
+			]
+		},
+		{
+			"title": "Other",
+			"services": [
+				{"key": "upower.service", "title": "Daemon for power management"},
+				{"key": "geoclue.service", "title": "Location Lookup Service"}
+			]
+		}
+	]
+}
