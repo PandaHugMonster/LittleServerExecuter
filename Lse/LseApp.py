@@ -3,7 +3,6 @@
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
 import gettext
-import json
 import locale
 import os
 
@@ -73,41 +72,26 @@ class LseApp(Gtk.Application):
 
 	def prepare_start(self):
 		self._settings_path = FileAccessHelper.get_settings_path()
-		self._settings = self._load_settings(self._settings_path)
+		self._settings = FileAccessHelper.load_settings(self._settings_path)
 		self.pid = str(os.getpid())
 		self._pidfile = '/tmp/pndcc.pid'
 
 		if self._settings['pidfile']:
 			self._pidfile = self._settings['pidfile']
 
-		if FileAccessHelper.isexist(self._pidfile):
-			print('Pid file exists. Quitting.')
-			self.quit()
-		else:
-			FileAccessHelper.save(self._pidfile, self.pid)
+		# if FileAccessHelper.isexist(self._pidfile):
+		# 	print('Pid file exists. Quitting.')
+		# 	self.quit()
+		# else:
+		# 	FileAccessHelper.save(self._pidfile, self.pid)
 
 	def set_default_page(self, alias: str):
 		self._settings['current_page'] = alias
-		self._save_settings(self._settings_path, self._settings)
+		FileAccessHelper.save_settings(self._settings_path, self._settings)
 
 	@property
 	def settings(self):
 		return self._settings
-
-
-
-	@staticmethod
-	def _load_settings(settings_path:str):
-		json_data = open(settings_path)
-		_settings = json.load(json_data)
-		json_data.close()
-		return _settings
-
-	@staticmethod
-	def _save_settings(settings_path:str, settings):
-		json_data = open(settings_path, 'w')
-		json.dump(settings, json_data)
-		json_data.close()
 
 	def prepare_app_defaults(self):
 		# self.machine = machine if machine else LocalMachine()

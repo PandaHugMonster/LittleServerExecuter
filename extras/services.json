@@ -35,5 +35,32 @@
 				{"key": "geoclue.service", "title": "Location Lookup Service"}
 			]
 		}
+	],
+	"excluded": ["-.mount"],
+	"special_services": [
+		{
+			"key": "reboot.service",
+			"title": "Reboot machine now",
+			"type": "button",
+			"icon": "reboot.png",
+			"description": "Reboots OS"
+		},
+		{
+			"key": "poweroff.service",
+			"title": "Poweroff machine now",
+			"type": "button",
+			"icon": "poweroff.png",
+			"description": "Poweroffs OS"
+		}
+	],
+	"show_only": [
+		"bluetooth.service",
+		"colord.service",
+		"udisks2.service",
+		"glassfish.service",
+		"httpd.service",
+		"mariadb.service",
+		"upower.service",
+		"geoclue.service"
 	]
 }

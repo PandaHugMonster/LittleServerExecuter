@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Author: PandaHugMonster <ivan.ponomarev.pi@gmail.com>
 # Version: 0.4
+import json
 import os
 from pathlib import Path
 
@@ -58,4 +59,17 @@ class FileAccessHelper:
 	@staticmethod
 	def isexist(file: str):
 		return Path(file).exists()
+
+	@staticmethod
+	def load_settings(settings_path: str):
+		json_data = open(settings_path)
+		_settings = json.load(json_data)
+		json_data.close()
+		return _settings
+
+	@staticmethod
+	def save_settings(settings_path: str, settings):
+		json_data = open(settings_path, 'w')
+		json.dump(settings, json_data)
+		json_data.close()
 

@@ -29,17 +29,21 @@ class PageSystemd(AbstractPage):
 	_is_permission_needed = True
 	_services_completed = None
 	_stack = None
+	_conf_path = None
+	_conf = {}
 	switches_service_lock = False
 	protected_widgets = []
 	all_services = []
 
+	subpage_switcher = None
+	search_button = None
+
 	def __init__(self):
 		name = "page_systemd"
 		title = _("SystemD Control")
+		self._conf_path = FileAccessHelper.get_settings_path("services")
+		self._conf = FileAccessHelper.load_settings(self._conf_path)
 		super().__init__(name, title)
-
-	subpage_switcher = None
-	search_button = None
 
 	def attach_init(self, page_manager: PageManager):
 		super().attach_init(page_manager)
@@ -49,11 +53,16 @@ class PageSystemd(AbstractPage):
 		self._setup_header_elements()
 		self._insert_all_services()
 
+	@property
+	def conf(self):
+		return self._conf
+
 	def _insert_all_services(self):
 		units = self.systemd.listUnits()
 
 		for key in units:
-			self.service_manager.add_service(key)
+			if '_show_only' not in self.conf or key in self.conf['_show_only']:
+				self.service_manager.add_service(key)
 
 	def _setup_header_elements(self):
 		self._stack = Gtk.Stack()
@@ -76,7 +85,7 @@ class PageSystemd(AbstractPage):
 	def get_main_container(self) -> Gtk.Box:
 		return self._stack
 
-	def callback_rb_all_services(self, grid: Gtk.Grid, row_index: int, service: Service):
+	def _callback_grid_services_all(self, grid: Gtk.Grid, row_index: int, service: Service):
 		switch = Gtk.Switch()
 		spinner = Gtk.Spinner()
 
@@ -85,7 +94,7 @@ class PageSystemd(AbstractPage):
 		grid.attach(Gtk.Label(label=service.key, xalign=0), 2, row_index, 1, 1)
 		grid.attach(Gtk.Label(label=service.label, xalign=0), 3, row_index, 1, 1)
 
-		service.attach_switch(switch)
+		self.service_manager.attach_switch(service.key, switch)
 		return row_index + 1
 
 	def all_services_show(self):
@@ -94,25 +103,35 @@ class PageSystemd(AbstractPage):
 		sub_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		grid = self._make_default_grid(scrolled_window, sub_box, True)
 
-		# self.all_services = self.build_grid(all_services_list)
-		# self.build_table(self.all_services, grid)
-		# services = self.service_manager.get_all()
-		# key = 'httpd.service'
-		# services = OrderedDict({ key: self.service_manager.get_service(key) })
-
-		services = self.service_manager.get_only_type(['service'])
-		self.build_grid_services(grid, services, self.callback_rb_all_services)
+		services = self.service_manager.get_all(self.conf['excluded'])
+		self.build_grid_services(grid, services, self._callback_grid_services_all)
 
 		return scrolled_window
+
+	""" // """
+	def _callback_grid_services_groups(self, grid: Gtk.Grid, row_index: int, service: Service):
+		switch = Gtk.Switch()
+		spinner = Gtk.Spinner()
+
+		# grid.attach(Gtk.Label(label='Group 1', xalign=0), 0, row_index, 4, 1)
+		# row_index += 1
+
+		grid.attach(spinner, 0, row_index, 1, 1)
+		grid.attach(switch, 1, row_index, 1, 1)
+		grid.attach(Gtk.Label(label=service.key, xalign=0), 2, row_index, 1, 1)
+		grid.attach(Gtk.Label(label=service.label, xalign=0), 3, row_index, 1, 1)
+
+		self.service_manager.attach_switch(service.key, switch)
+		return row_index + 1
 
 	def groups_show(self):
 
 		scrolled_window = Gtk.ScrolledWindow()
-		# sub_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-		# grid = self._make_default_grid(scrolled_window, sub_box, True)
-		#
-		# services = self.service_manager.get_only_type(['target'])
-		# self.build_grid_services(grid, services, self.callback_rb_all_services)
+		sub_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		grid = self._make_default_grid(scrolled_window, sub_box, True)
+
+		services = self.service_manager.get_all(self.conf['excluded'])
+		self.build_grid_services(grid, services, self._callback_grid_services_groups)
 
 		return scrolled_window
 
