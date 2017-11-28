@@ -130,8 +130,14 @@ class PageSystemd(AbstractPage):
 		sub_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		grid = self._make_default_grid(scrolled_window, sub_box, True)
 
-		services = self.service_manager.get_all(self.conf['excluded'])
-		self.build_grid_services(grid, services, self._callback_grid_services_groups)
+		sub = []
+		if 'groups' in self.conf:
+			for group in self.conf['groups']:
+				for item in group['services']:
+					sub.append(self.service_manager.get_service(item['key']))
+				self.build_grid_services(grid, sub, self._callback_grid_services_groups)
+
+		### HEHEH
 
 		return scrolled_window
 
@@ -190,6 +196,7 @@ class PageSystemd(AbstractPage):
 					row_index += 1
 
 					row_index = callback(grid, row_index, service)
+		return row_index
 
 	def set_defaults(self, box: Gtk.Box):
 		self._stack.add_titled(self.groups_show(), 'grouped_services', _("Grouped"))
