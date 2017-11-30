@@ -130,12 +130,39 @@ class PageSystemd(AbstractPage):
 		sub_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		grid = self._make_default_grid(scrolled_window, sub_box, True)
 
-		sub = []
+		row_index = 0
 		if 'groups' in self.conf:
 			for group in self.conf['groups']:
+				sub = OrderedDict()
+
+				group_label = Gtk.Label(label=group['title'])
+				box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+
+				stop_all_button = Gtk.Button.new_from_icon_name("media-playback-stop", Gtk.IconSize.BUTTON)
+				# stop_all_button.group = group
+
+				start_all_button = Gtk.Button.new_from_icon_name("media-playback-start", Gtk.IconSize.BUTTON)
+				# start_all_button.group = group
+
+				box.add(start_all_button)
+				box.add(stop_all_button)
+
+				grid.attach(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL), 0, row_index, 1, 1)
+				row_index += 1
+
+				grid.attach(group_label, 0, row_index, 1, 1)
+				grid.attach(box, 1, row_index, 1, 1)
+				row_index += 1
+
+				i = 0
 				for item in group['services']:
-					sub.append(self.service_manager.get_service(item['key']))
-				self.build_grid_services(grid, sub, self._callback_grid_services_groups)
+					sub[i] = self.service_manager.get_service(item['key'])
+					i += 1
+
+				self.service_manager.attach_group_change(start_all_button, True, sub)
+				self.service_manager.attach_group_change(stop_all_button, False, sub)
+
+				row_index = self.build_grid_services(grid, OrderedDict(sub), self._callback_grid_services_groups, row_index)
 
 		### HEHEH
 
@@ -166,36 +193,6 @@ class PageSystemd(AbstractPage):
 		for key in services:
 			if type(services[key]) == Service:
 				row_index = callback(grid, row_index, services[key])
-			elif type(services[key]) == OrderedDict:
-				group = key
-				for subkey in services[group]:
-					service = services[group][subkey]
-
-					group_label = Gtk.Label(label=group)
-					box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-
-					stop_all_button = Gtk.Button.new_from_icon_name("media-playback-stop", Gtk.IconSize.BUTTON)
-					stop_all_button.group = group
-
-					start_all_button = Gtk.Button.new_from_icon_name("media-playback-start", Gtk.IconSize.BUTTON)
-					start_all_button.group = group
-
-					# start_all_button.connect("clicked", lambda widget: self.process_group_services_now(True, widget.group))
-					# stop_all_button.connect("clicked", lambda widget: self.process_group_services_now(False, widget.group))
-
-					# self.protected_widgets.append(start_all_button)
-					# self.protected_widgets.append(stop_all_button)
-
-					box.add(start_all_button)
-					box.add(stop_all_button)
-
-					grid.attach(group_label, 0, row_index, 1, 1)
-					row_index += 1
-
-					grid.attach(box, 1, row_index, 1, 1)
-					row_index += 1
-
-					row_index = callback(grid, row_index, service)
 		return row_index
 
 	def set_defaults(self, box: Gtk.Box):
