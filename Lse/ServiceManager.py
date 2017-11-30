@@ -95,6 +95,13 @@ class ServiceManager:
 			switch.set_state(service.status)
 			switch.connect("notify::active", self.switch_event_status_changed, key)
 
+	def attach_group_change(self, button, status, services):
+		for index in services:
+			button.connect("clicked", self.change_service_status, services[index], status)
+
+	def change_service_status(self, button, service, status):
+		service.status = status
+
 	def _preserved_switch(self, switch, state):
 		self._switches_service_lock = True
 		print('Switch State changed: ' + str(state))
